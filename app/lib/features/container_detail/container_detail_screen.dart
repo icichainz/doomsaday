@@ -10,13 +10,13 @@ import '../../theme/state_colors.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/actions.dart';
 import '../../widgets/buttons.dart';
-import '../../widgets/notify.dart';
 import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
 import '../../widgets/state_views.dart';
 import '../containers/container_actions.dart';
 import '../containers/containers_pane.dart';
+import 'container_config_sheet.dart';
 
 /// Screen 6 — Container detail. Stop and Remove go through the confirm sheet.
 class ContainerDetailScreen extends ConsumerWidget {
@@ -217,21 +217,22 @@ class ContainerDetailScreen extends ConsumerWidget {
                   children: <Widget>[
                     NavRow(
                       label: 'Environment',
-                      value: role.canReadEnvironment
-                          ? '${d.envNames.length} variables, values hidden'
-                          : '${d.envNames.length} variables, admin only',
-                      onTap: role.canReadEnvironment
-                          ? () => _showEnvironment(context, ref)
-                          : null,
+                      value: '${d.envNames.length} variables, values hidden',
+                      onTap: () => showContainerConfig(
+                        context,
+                        serverId: serverId,
+                        detail: d,
+                      ),
                     ),
                     NavRow(
                       label: 'Volumes',
-                      value: '${d.mounts.length} mounts',
-                      onTap: () => notify(
+                      value:
+                          '${d.mounts.length} mount${d.mounts.length == 1 ? '' : 's'}',
+                      onTap: () => showContainerConfig(
                         context,
-                        d.mounts.isEmpty
-                            ? 'No volumes mounted'
-                            : d.mountNames.join(' · '),
+                        serverId: serverId,
+                        detail: d,
+                        mounts: true,
                       ),
                     ),
                   ],
@@ -254,18 +255,6 @@ class ContainerDetailScreen extends ConsumerWidget {
         ),
       ],
     );
-  }
-
-  Future<void> _showEnvironment(BuildContext context, WidgetRef ref) async {
-    try {
-      final Map<String, String> env = await ref
-          .read(agentApiProvider(serverId))
-          .containerEnv(containerId);
-      if (!context.mounted) return;
-      notify(context, '${env.length} variables read · this call is audited');
-    } on AgentException catch (error) {
-      if (context.mounted) notify(context, error.toString(), danger: true);
-    }
   }
 }
 

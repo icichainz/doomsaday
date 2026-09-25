@@ -145,7 +145,18 @@ const flavors = process.argv.slice(2).length
 
 let bad = 0;
 for (const flavor of flavors) {
-  for (const board of [...BOTH, ...(ONLY[flavor] ?? [])]) {
+  // Boards captured by any other harness file (screens_<branch>_test.dart)
+  // pair automatically when both PNGs exist.
+  const listed = new Set([...BOTH, ...Object.values(ONLY).flat()]);
+  const extra = fs.existsSync(path.join(appDir, flavor))
+    ? fs
+        .readdirSync(path.join(appDir, flavor))
+        .filter((f) => f.endsWith('.png'))
+        .map((f) => f.slice(0, -4))
+        .filter((b) => !listed.has(b) && fs.existsSync(path.join(designDir, `${b}.png`)))
+        .sort()
+    : [];
+  for (const board of [...BOTH, ...(ONLY[flavor] ?? []), ...extra]) {
     const problem = compose(board, flavor);
     if (problem) {
       bad++;

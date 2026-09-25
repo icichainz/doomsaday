@@ -218,3 +218,33 @@ String ellipsizeMiddle(String value, int max) {
   final int tail = max - 1 - head;
   return '${value.substring(0, head)}…${value.substring(value.length - tail)}';
 }
+
+/// `09:41`, the activity log's time column once the day is its own heading.
+String formatHourMinute(DateTime when) {
+  final DateTime t = when.toLocal();
+  return '${_two(t.hour)}:${_two(t.minute)}';
+}
+
+/// The day headings of the activity log: `Today`, `Yesterday`, `Tuesday`
+/// within the week, then `12 Mar`, and `12 Mar 2025` once the year is not
+/// this one.
+String formatDayHeading(DateTime when, {DateTime? now}) {
+  final DateTime t = when.toLocal();
+  final DateTime reference = (now ?? DateTime.now()).toLocal();
+  final int days = _calendarDays(t, reference);
+  if (days <= 0) return 'Today';
+  if (days == 1) return 'Yesterday';
+  if (days < 7) return _weekdayNames[t.weekday - 1];
+  final String date = '${t.day} ${_months[t.month - 1]}';
+  return t.year == reference.year ? date : '$date ${t.year}';
+}
+
+const List<String> _weekdayNames = <String>[
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+  'Sunday',
+];

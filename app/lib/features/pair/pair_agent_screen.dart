@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../data/servers_repository.dart';
+import '../../data/this_device.dart';
 import '../../edition/server_limit.dart';
 import '../../layout/layout.dart';
 import '../../theme/app_theme.dart';
@@ -69,7 +70,7 @@ class _PairAgentScreenState extends ConsumerState<PairAgentScreen> {
   final TextEditingController _token = TextEditingController();
 
   bool _busy = false;
-  String? _error;
+  PairFailure? _error;
 
   @override
   void dispose() {
@@ -114,7 +115,9 @@ class _PairAgentScreenState extends ConsumerState<PairAgentScreen> {
       );
       context.go('/s/${result.server.id}/overview');
     } on AgentException catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) {
+        setState(() => _error = PairFailure.from(error, agentUrl: _url.text));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -211,28 +214,18 @@ class _PairAgentScreenState extends ConsumerState<PairAgentScreen> {
         ],
       ),
       if (_error != null)
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: t.dangerTint,
-            borderRadius: AppShape.smallCardRadius,
-            border: Border.all(color: t.dangerBorder),
-          ),
-          child: Text(
-            _error!,
-            style: AppText.small.copyWith(color: t.danger, height: 1.4),
-          ),
+        PairErrorCard(failure: _error!)
+      else
+        const InfoNote(
+          icon: Icons.shield_outlined,
+          text:
+              'HTTPS only. The token is exchanged for a device key stored in '
+              "this device's secure storage, and the agent's certificate is "
+              'pinned on first connect — the app refuses the connection if it '
+              'ever changes.',
         ),
-      const InfoNote(
-        icon: Icons.shield_outlined,
-        text:
-            'HTTPS only. The token is exchanged for a device key stored in '
-            "this device's secure storage, and the agent's certificate is "
-            'pinned on first connect — the app refuses the connection if it '
-            'ever changes.',
-      ),
       DoomButton(
-        'Test connection and pair',
+        _error == null ? 'Test connection and pair' : 'Try again',
         tone: ButtonTone.primary,
         height: widget.dialog ? 44 : 56,
         radius: widget.dialog ? 12 : 18,
@@ -281,7 +274,118 @@ class _ServerLimitOverServersState
   Widget build(BuildContext context) => const ServersScreen();
 }
 
-/// Shown once, before the fingerprint is pinned.
+/// A SHA-256 fingerprint as eight groups of eight hex characters, the unit a
+/// person can compare at a glance. The agent prints the same bytes as
+/// `A4:E9:7C:10:…`; every group here is four of those pairs without colons.
+List<String> fingerprintGroups(String fingerprint) {
+  final String hex = fingerprint
+      .replaceAll(RegExp('[^0-9a-fA-F]'), '')
+      .toUpperCase();
+  return <String>[
+    for (int i = 0; i < hex.length; i += 8)
+      hex.substring(i, i + 8 > hex.length ? hex.length : i + 8),
+  ];
+}
+
+/// Why pairing stopped, in the words the Pair screen's red card uses
+/// (`design/PairError.dc.html`).
+class PairFailure {
+  const PairFailure(this.title, this.message);
+
+  final String title;
+  final String message;
+
+  factory PairFailure.from(AgentException error, {String agentUrl = ''}) {
+    final String device = thisDeviceLabel(capitalized: false);
+    final String where =
+        agentUrl.trim().isEmpty || agentUrl.trim() == 'https://'
+        ? 'that address'
+        : agentUrl.trim();
+    return switch (error.code) {
+      'certificate_mismatch' => PairFailure(
+        "Certificate doesn't match",
+        'The certificate the agent presented is not the one it reported, so '
+            'nothing was pinned or saved. Something may sit between $device '
+            'and the host.',
+      ),
+      'pairing_failed' when error.status == 401 => const PairFailure(
+        'Token not accepted',
+        'The agent says the pairing token is not valid or has expired. Run '
+            'agent_zero pair-token on the host for a fresh one.',
+      ),
+      'agent_unreachable' => PairFailure(
+        'Agent not reachable',
+        'Nothing answered at $where. Check the address and port, and that '
+            'the agent is running on the host.',
+      ),
+      'secure_storage_unavailable' => PairFailure(
+        'Secure storage unavailable',
+        "The device key can't be stored in $device's secure storage, so "
+            'nothing was saved. On a Mac this happens in an unsigned build; '
+            'use a signed one.',
+      ),
+      'insecure_transport' => PairFailure('HTTPS required', error.message),
+      'validation_failed' => PairFailure('Check the details', error.message),
+      'conflict' => PairFailure('Already paired', error.message),
+      _ => PairFailure('Pairing failed', error.message),
+    };
+  }
+}
+
+/// The red note card that replaces the HTTPS note when pairing fails.
+class PairErrorCard extends StatelessWidget {
+  const PairErrorCard({super.key, required this.failure});
+
+  final PairFailure failure;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: t.dangerTint,
+          borderRadius: AppShape.smallCardRadius,
+          border: Border.all(color: t.dangerBorder),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Icon(Icons.gpp_bad_outlined, size: 20, color: t.danger),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    failure.title,
+                    style: AppText.label.copyWith(
+                      color: t.danger,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    failure.message,
+                    style: AppText.small.copyWith(
+                      color: t.codeText,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown once, before the fingerprint is pinned (`design/PairConfirm.dc.html`).
 class _FingerprintBody extends StatelessWidget {
   const _FingerprintBody({required this.preview, required this.sheet});
 
@@ -291,77 +395,199 @@ class _FingerprintBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
+    final List<String> groups = fingerprintGroups(preview.fingerprint);
+    final TextStyle groupStyle = TextStyle(
+      fontFamily: AppFonts.mono,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0.4,
+      color: t.text,
+    );
     return ModalBody(
       handle: sheet,
       children: <Widget>[
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        Row(
           children: <Widget>[
-            Text(
-              'Trust this certificate?',
-              style: AppText.sheetTitle.copyWith(color: t.text),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: t.accentTint,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                Icons.verified_user_outlined,
+                size: 22,
+                color: t.accent,
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              '${preview.server.host} answered, and the fingerprint it '
-              'reported matches the certificate it actually presented. Check '
-              'it against what the agent printed on the host, then pin it.',
-              style: AppText.body.copyWith(color: t.mutedText, height: 1.5),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    'Check the certificate',
+                    style: AppText.sheetTitle.copyWith(color: t.text),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    preview.server.host,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.monoSmall.copyWith(color: t.mutedText),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 14),
-            CodeBlock(
-              caption: 'SHA-256 fingerprint',
-              code: _wrap(preview.fingerprint),
+          ],
+        ),
+        Text(
+          'Compare with the fingerprint the agent printed on the host. If '
+          'every group matches, pin it: from then on the app refuses this '
+          'server if the certificate changes.',
+          style: AppText.label.copyWith(color: t.codeText, height: 1.5),
+        ),
+        Semantics(
+          label: 'SHA-256 fingerprint ${groups.join(' ')}',
+          container: true,
+          excludeSemantics: true,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            decoration: BoxDecoration(
+              color: t.codeBlock,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: t.border),
             ),
-            const SizedBox(height: 12),
-            RowGroup(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                DetailRow('Agent version', preview.agentVersion),
-                DetailRow('Your role', preview.role.label),
-                DetailRow('Device id', preview.deviceId, mono: true),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: <Widget>[
-                Expanded(
-                  child: DoomButton(
-                    'Cancel',
-                    expand: true,
-                    height: 54,
-                    radius: 16,
-                    onPressed: () => Navigator.of(context).pop(false),
+                Text(
+                  'SHA-256 FINGERPRINT',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.6,
+                    color: t.mutedText,
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DoomButton(
-                    'Pin and pair',
-                    expand: true,
-                    height: 54,
-                    radius: 16,
-                    tone: ButtonTone.primary,
-                    onPressed: () => Navigator.of(context).pop(true),
+                for (int row = 0; row < groups.length; row += 4) ...<Widget>[
+                  SizedBox(height: row == 0 ? 10 : 6),
+                  Row(
+                    children: <Widget>[
+                      for (int i = row; i < row + 4; i++) ...<Widget>[
+                        if (i > row) const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            i < groups.length ? groups[i] : '',
+                            maxLines: 1,
+                            softWrap: false,
+                            style: groupStyle,
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ),
+                ],
               ],
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            borderRadius: AppShape.smallCardRadius,
+            border: Border.all(color: t.border),
+          ),
+          child: Column(
+            children: <Widget>[
+              _PreviewRow('Agent version', preview.agentVersion, mono: true),
+              _PreviewRow(
+                'Role for ${thisDeviceLabel(capitalized: false)}',
+                preview.role.label,
+              ),
+              _PreviewRow(
+                'Device id',
+                preview.deviceId,
+                mono: true,
+                last: true,
+              ),
+            ],
+          ),
+        ),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: DoomButton(
+                'Cancel',
+                expand: true,
+                height: 54,
+                radius: 16,
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: DoomButton(
+                'Pin and pair',
+                expand: true,
+                height: 54,
+                radius: 16,
+                tone: ButtonTone.primary,
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
             ),
           ],
         ),
       ],
     );
   }
+}
 
-  /// Four groups per line, which is how the agent prints it on the host.
-  static String _wrap(String fingerprint) {
-    final List<String> parts = fingerprint.split(':');
-    final StringBuffer out = StringBuffer();
-    for (int i = 0; i < parts.length; i += 8) {
-      if (i > 0) out.write('\n');
-      out.write(parts.skip(i).take(8).join(':'));
-    }
-    return out.toString();
+class _PreviewRow extends StatelessWidget {
+  const _PreviewRow(
+    this.label,
+    this.value, {
+    this.mono = false,
+    this.last = false,
+  });
+
+  final String label;
+  final String value;
+  final bool mono;
+  final bool last;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    return Container(
+      constraints: const BoxConstraints(minHeight: 44),
+      decoration: BoxDecoration(
+        border: last ? null : Border(bottom: BorderSide(color: t.border)),
+      ),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Text(
+              label,
+              style: AppText.label.copyWith(color: t.mutedText),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            value,
+            style: mono
+                ? AppText.mono.copyWith(
+                    color: t.text,
+                    fontWeight: FontWeight.w400,
+                  )
+                : AppText.label.copyWith(color: t.text),
+          ),
+        ],
+      ),
+    );
   }
 }
 

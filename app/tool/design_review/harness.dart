@@ -1,0 +1,260 @@
+/// The capture helpers of `screens_test.dart`, public so every board file
+/// under `tool/design_review/` can share them.
+///
+/// Same behaviour as the originals: the whole app in demo mode at a board's
+/// exact size, device pixel ratio 1, real fonts, one PNG per board into
+/// `--dart-define=REVIEW_OUT=`. `screens_test.dart` keeps its own private
+/// copies so it runs unchanged.
+library;
+
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:doomsaday/app/app.dart';
+import 'package:doomsaday/data/biometrics.dart';
+import 'package:doomsaday/data/mock_seed.dart';
+import 'package:doomsaday/data/providers.dart';
+import 'package:doomsaday/data/servers_repository.dart';
+import 'package:doomsaday/edition/edition.dart';
+import 'package:doomsaday/data/preferences.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+export 'package:flutter_test/flutter_test.dart';
+
+// ------------------------------------------------------------------- sizes
+
+const Size kPhone = Size(390, 844);
+
+/// The `AppSettings` board is a tall phone screen: it scrolls in the app and
+/// the board draws all of it at once.
+const Size kAppSettings = Size(390, 1320);
+const Size kTablet = Size(834, 1194);
+const Size kDesktop = Size(1440, 900);
+
+const String kServer = 'prod-eu-1';
+const String kApiGateway = '4f2a9c1e7b3d';
+
+const String _outDefine = String.fromEnvironment(
+  'REVIEW_OUT',
+  defaultValue: '../review/app/unknown',
+);
+const String _materialFontsDefine = String.fromEnvironment('MATERIAL_FONTS');
+
+final GlobalKey _rootKey = GlobalKey();
+
+// -------------------------------------------------------------------- fonts
+
+/// The app's bundled TTFs under the family names the theme asks for, plus the
+/// icon font, so nothing renders as a box.
+Future<void> loadFonts() async {
+  const Map<String, List<String>> families = <String, List<String>>{
+    'Bricolage Grotesque': <String>[
+      'assets/fonts/BricolageGrotesque-500.ttf',
+      'assets/fonts/BricolageGrotesque-700.ttf',
+    ],
+    'IBM Plex Sans': <String>[
+      'assets/fonts/IBMPlexSans-400.ttf',
+      'assets/fonts/IBMPlexSans-500.ttf',
+      'assets/fonts/IBMPlexSans-600.ttf',
+    ],
+    'IBM Plex Mono': <String>[
+      'assets/fonts/IBMPlexMono-400.ttf',
+      'assets/fonts/IBMPlexMono-500.ttf',
+    ],
+  };
+  for (final MapEntry<String, List<String>> entry in families.entries) {
+    final FontLoader loader = FontLoader(entry.key);
+    for (final String path in entry.value) {
+      loader.addFont(_bytes(File(path)));
+    }
+    await loader.load();
+  }
+
+  final File icons = File(_materialIconsPath());
+  if (icons.existsSync()) {
+    final FontLoader loader = FontLoader('MaterialIcons');
+    loader.addFont(_bytes(icons));
+    await loader.load();
+  } else {
+    stdout.writeln('! MaterialIcons not found at ${icons.path}');
+  }
+}
+
+Future<ByteData> _bytes(File file) async =>
+    ByteData.sublistView(await file.readAsBytes());
+
+/// `--dart-define=MATERIAL_FONTS=` when the runner passed one, otherwise the
+/// SDK cache next to the `flutter_tester` this test is running in.
+String _materialIconsPath() {
+  if (_materialFontsDefine.isNotEmpty) {
+    return '$_materialFontsDefine/MaterialIcons-Regular.otf';
+  }
+  final List<String> parts = Platform.resolvedExecutable.split('/');
+  final int cache = parts.lastIndexOf('cache');
+  if (cache > 0) {
+    return <String>[
+      ...parts.sublist(0, cache + 1),
+      'artifacts',
+      'material_fonts',
+      'MaterialIcons-Regular.otf',
+    ].join('/');
+  }
+  return '';
+}
+
+// ------------------------------------------------------------------ pumping
+
+ServersRepository demoRepository() => ServersRepository(
+  worlds: <MockWorld>[seedProduction(), seedStaging(), seedOffline()],
+);
+
+/// Two servers that are paired rather than sampled, so the edition's limit
+/// counts — what the P1 and P2 boards are drawn against.
+// The analyzer only counts `test/` as a test, and this file is deliberately
+// outside it so the suite does not pick it up.
+// ignore: invalid_use_of_visible_for_testing_member
+ServersRepository pairedRepository() => ServersRepository.pairedMocks(
+  <MockWorld>[seedProduction(), seedStaging()],
+  maxServers: currentEdition.maxServers,
+);
+
+/// The whole app, with the edition left to the compile-time constant.
+Future<void> pumpBoard(
+  WidgetTester tester, {
+  required Size size,
+  ThemeMode themeMode = ThemeMode.dark,
+  ServersRepository? repository,
+  Authenticator authenticator = const AlwaysConfirms(),
+}) async {
+  tester.view.physicalSize = size;
+  tester.view.devicePixelRatio = 1.0;
+  // The boards are drawn dark unless the name says Light, so a screen left on
+  // "System" has to find a dark system under it.
+  tester.platformDispatcher.platformBrightnessTestValue =
+      themeMode == ThemeMode.light ? Brightness.light : Brightness.dark;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+    tester.platformDispatcher.clearPlatformBrightnessTestValue();
+  });
+  await tester.pumpWidget(
+    RepaintBoundary(
+      key: _rootKey,
+      child: ProviderScope(
+        overrides: <Override>[
+          serversRepositoryProvider.overrideWithValue(
+            repository ?? demoRepository(),
+          ),
+          authenticatorProvider.overrideWithValue(authenticator),
+          preferencesProvider.overrideWith(
+            (ref) => PreferencesController.inMemory(
+              Preferences(themeMode: themeMode),
+            ),
+          ),
+        ],
+        child: const DoomsadayApp(),
+      ),
+    ),
+  );
+  await settle(tester);
+}
+
+/// The mock answers after a few hundred milliseconds and its log and stats
+/// streams never go quiet, so this is fixed pumping rather than pumpAndSettle.
+Future<void> settle(WidgetTester tester, {int frames = 8}) async {
+  for (int i = 0; i < frames; i++) {
+    await tester.pump(const Duration(milliseconds: 300));
+  }
+}
+
+ProviderContainer appContainer(WidgetTester tester) =>
+    ProviderScope.containerOf(tester.element(find.byType(DoomsadayApp)));
+
+Future<void> go(WidgetTester tester, String path) async {
+  appContainer(tester).read(routerProvider).go(path);
+  await settle(tester);
+}
+
+Future<void> tap(WidgetTester tester, Finder finder) async {
+  await tester.tap(finder, warnIfMissed: false);
+  await settle(tester);
+}
+
+Future<void> teardown(WidgetTester tester) async {
+  await tester.pumpWidget(const SizedBox.shrink());
+  await tester.pump(const Duration(seconds: 6));
+}
+
+// ------------------------------------------------------------------ capture
+
+Future<void> shoot(WidgetTester tester, String name) async {
+  await tester.runAsync(() async {
+    final RenderRepaintBoundary boundary =
+        _rootKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+    final ui.Image image = await boundary.toImage();
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    image.dispose();
+    final File file = File('$_outDefine/$name.png');
+    file.parent.createSync(recursive: true);
+    file.writeAsBytesSync(png!.buffer.asUint8List());
+    stdout.writeln('  shot $name (${png.lengthInBytes} B)');
+  });
+}
+
+/// One board: pump, drive, shoot, tear down.
+///
+/// [platform] is what the boards are drawn on: the phone screens are a phone,
+/// and every 1440 board is the Mac that D1-D6 show. It only changes copy the
+/// design makes platform-specific — "This Mac", the command glyph, Touch ID.
+void board(
+  String name,
+  Size size,
+  Future<void> Function(WidgetTester tester) drive, {
+  ThemeMode themeMode = ThemeMode.dark,
+  ServersRepository Function()? repository,
+  Authenticator authenticator = const AlwaysConfirms(),
+  TargetPlatform platform = TargetPlatform.android,
+}) {
+  testWidgets(name, (WidgetTester tester) async {
+    // Reset inside the body: the binding asserts the override is unset again
+    // before any tearDown runs.
+    if (platform != TargetPlatform.android) {
+      debugDefaultTargetPlatformOverride = platform;
+    }
+    await pumpBoard(
+      tester,
+      size: size,
+      themeMode: themeMode,
+      repository: repository?.call(),
+      authenticator: authenticator,
+    );
+    await drive(tester);
+    await shoot(tester, name);
+    await teardown(tester);
+    debugDefaultTargetPlatformOverride = null;
+  });
+}
+
+/// The 1440 boards are drawn on a Mac.
+void desktopBoard(
+  String name,
+  Future<void> Function(WidgetTester tester) drive, {
+  ThemeMode themeMode = ThemeMode.dark,
+  ServersRepository Function()? repository,
+  Authenticator authenticator = const AlwaysConfirms(),
+}) => board(
+  name,
+  kDesktop,
+  drive,
+  themeMode: themeMode,
+  repository: repository,
+  authenticator: authenticator,
+  platform: TargetPlatform.macOS,
+);

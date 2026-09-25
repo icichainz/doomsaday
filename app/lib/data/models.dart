@@ -516,16 +516,29 @@ class ActivityEntry {
   /// [selfDeviceId] is this device's id on the agent; when the record carries
   /// it the sentence says "this Mac" or "this phone" rather than whatever the
   /// device was paired under.
-  String sentence({String? selfDeviceId, String selfLabel = 'this device'}) {
+  ///
+  /// [withResult] adds ` · denied` or ` · error` to a refused call; a screen
+  /// that draws the result as a pill turns it off.
+  String sentence({
+    String? selfDeviceId,
+    String selfLabel = 'this device',
+    bool withResult = true,
+  }) {
     final StringBuffer out = StringBuffer(_phrase);
     final String who = _actor(selfDeviceId, selfLabel);
     if (who.isNotEmpty) out.write(' from $who');
-    if (failed) out.write(' · $result');
+    if (failed && withResult) out.write(' · $result');
     return out.toString();
   }
 
   /// The plain sentence, for screens that know nothing about this device.
   String get text => sentence();
+
+  /// True when the record carries this device's id.
+  bool isFrom(String? selfDeviceId) =>
+      selfDeviceId != null &&
+      selfDeviceId.isNotEmpty &&
+      deviceId == selfDeviceId;
 
   String _actor(String? selfDeviceId, String selfLabel) {
     final bool isSelf =

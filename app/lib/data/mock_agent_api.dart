@@ -261,8 +261,29 @@ class MockAgentApi implements AgentApi {
     final ContainerDetail? known = world.containerDetails[id];
     final List<String> names =
         known?.envNames ?? const <String>['LOG_LEVEL', 'TZ'];
-    return <String, String>{for (final String n in names) n: '••••••••'};
+    // The real agent writes every read of the values to the audit log.
+    world.addActivity('GET /v1/containers/{id}/env', known?.name ?? id);
+    return <String, String>{
+      for (final String n in names) n: _demoEnvValues[n] ?? 'demo',
+    };
   });
+
+  /// Plausible values for the seeded names, none of them a real secret.
+  static const Map<String, String> _demoEnvValues = <String, String>{
+    'DATABASE_URL': 'postgres://api:demo@postgres-main:5432/orders',
+    'FEATURE_FLAGS': 'checkout-v2,fast-search',
+    'JWT_SECRET': 'demo-only-not-a-secret',
+    'LOG_LEVEL': 'info',
+    'NODE_ENV': 'production',
+    'OTEL_ENDPOINT': 'http://otel-collector:4318',
+    'PORT': '8080',
+    'RATE_LIMIT': '600/min',
+    'REDIS_URL': 'redis://redis-cache:6379/0',
+    'REGION': 'eu-west-1',
+    'SENTRY_DSN': 'https://demo@sentry.example.com/4',
+    'STRIPE_KEY': 'sk_test_demo',
+    'TZ': 'UTC',
+  };
 
   @override
   Stream<ContainerStats> containerStatsStream(
@@ -1338,9 +1359,31 @@ class MockAgentApi implements AgentApi {
 /// A shell that behaves enough like one to exercise the terminal screen.
 class _MockExecSession implements ExecSession {
   _MockExecSession(this.containerName) {
-    _output.add('Demo shell on $containerName. Type "exit" to leave.\r\n');
-    _output.add(r'/ # ');
+    // The output is a broadcast stream and the screen subscribes only once
+    // exec() has returned, so the first prompt waits for it.
+    Timer(const Duration(milliseconds: 50), () {
+      if (!_output.isClosed) _output.add(_prompt);
+    });
   }
+
+  static const String _prompt = '/app # ';
+
+  /// A handful of answers, so the demo shell reads like a real one. Anything
+  /// else is "not found", which is what a slim image says too.
+  static const Map<String, String> _answers = <String, String>{
+    'ls': 'config  dist  node_modules  package.json',
+    'pwd': '/app',
+    'whoami': 'root',
+    'cat config/app.yaml':
+        'port: 8080\r\nlog_level: info\r\nregion: eu-west-1\r\n'
+        'upstream: worker-queue:7000',
+    'ps':
+        'PID   USER     TIME  COMMAND\r\n'
+        '    1 root      2:14 node dist/server.js\r\n'
+        '   41 root      0:00 /bin/sh\r\n'
+        '   47 root      0:00 ps',
+    'wget -qO- localhost:8080/healthz': '{"status":"ok","uptime":1123200}',
+  };
 
   final String containerName;
   final StreamController<String> _output = StreamController<String>.broadcast();
@@ -1354,18 +1397,30 @@ class _MockExecSession implements ExecSession {
 
   @override
   void send(String data) {
+    if (_output.isClosed) return;
+    if (data == '\x03') {
+      _output.add('^C\r\n$_prompt');
+      return;
+    }
+    // Arrows, Esc and Tab have nothing to act on in the demo.
+    if (!data.endsWith('\n')) return;
     final String command = data.trim();
+    // A terminal echoes what was typed.
+    _output.add('$command\r\n');
     if (command == 'exit') {
       if (!_exit.isCompleted) _exit.complete(0);
-      if (!_output.isClosed) _output.close();
+      _output.close();
       return;
     }
     if (command.isNotEmpty) {
+      final String? answer = _answers[command];
       _output.add(
-        'demo mode: "$command" is not run against a real container\r\n',
+        answer == null
+            ? 'sh: ${command.split(' ').first}: not found\r\n'
+            : '$answer\r\n',
       );
     }
-    _output.add(r'/ # ');
+    _output.add(_prompt);
   }
 
   @override

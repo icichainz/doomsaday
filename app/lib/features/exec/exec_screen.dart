@@ -51,52 +51,70 @@ class ExecScreen extends ConsumerWidget {
       backgroundColor: t.ground,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
           child: ExecView(
             serverId: serverId,
             containerId: containerId,
-            header: (BuildContext context, String status, PillTone tone) => Row(
-              children: <Widget>[
-                DoomIconButton(
-                  icon: Icons.chevron_left,
-                  semanticLabel: 'Back to $name',
-                  size: 44,
-                  radius: 12,
-                  filled: false,
-                  foreground: t.mutedText,
-                  onPressed: () => Navigator.of(context).maybePop(),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        'Shell',
-                        style: TextStyle(
-                          fontFamily: AppFonts.display,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.3,
-                          color: t.text,
+            header: (BuildContext context, String status, PillTone tone) =>
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    BackLink(name),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: <Widget>[
+                        Text(
+                          'Shell',
+                          style: AppText.screenTitle.copyWith(color: t.text),
                         ),
-                      ),
-                      const SizedBox(height: 1),
-                      Text(
-                        name,
-                        style: AppText.monoSmall.copyWith(color: t.mutedText),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: StatusPill(status, dot: true, tone: tone),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$containerId · $serverId',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.monoSmall.copyWith(color: t.mutedText),
+                    ),
+                  ],
                 ),
-                StatusPill(status, dot: true, tone: tone),
-              ],
-            ),
           ),
         ),
       ),
     );
   }
+}
+
+/// The keys an on-screen keyboard lacks, as the bytes a terminal sends.
+enum TerminalKey {
+  tab('Tab', '\t'),
+  interrupt('Ctrl+C', '\x03'),
+  up('Previous command', '\x1B[A'),
+  down('Next command', '\x1B[B'),
+  escape('Esc', '\x1B');
+
+  const TerminalKey(this.label, this.bytes);
+
+  final String label;
+  final String bytes;
+}
+
+/// What the status pill says: `Connecting`, `Connected`, `Exited 0`.
+(String, PillTone) execStatus({
+  required bool connecting,
+  required bool failed,
+  required int? exitCode,
+}) {
+  if (connecting) return ('Connecting', PillTone.warning);
+  if (failed) return ('Failed', PillTone.danger);
+  if (exitCode == null) return ('Connected', PillTone.accent);
+  if (exitCode < 0) return ('Disconnected', PillTone.neutral);
+  return ('Exited $exitCode', PillTone.neutral);
 }
 
 /// The terminal itself: the WebSocket session, its output, the input line and
@@ -221,6 +239,20 @@ class _ExecViewState extends ConsumerState<ExecView> {
     _focus.requestFocus();
   }
 
+  /// Tab completes what is typed so far, so the line goes with it; the other
+  /// keys are sent on their own.
+  void _sendKey(TerminalKey key) {
+    final ExecSession? session = _session;
+    if (session == null || _exitCode != null) return;
+    if (key == TerminalKey.tab) {
+      session.send('${_input.text}${key.bytes}');
+      _input.clear();
+    } else {
+      session.send(key.bytes);
+    }
+    _focus.requestFocus();
+  }
+
   /// The terminal is sized from the box the output actually occupies, so the
   /// shell wraps where the screen does.
   void _reportSize(Size box) {
@@ -237,29 +269,44 @@ class _ExecViewState extends ConsumerState<ExecView> {
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
     final bool live = _session != null && _exitCode == null && _error == null;
-    final double buttonHeight = context.density.button;
+    final bool touch = !WindowClass.of(context).usesDesktopExtras;
+    final double rowHeight = touch ? 44 : context.density.button;
+    final (String status, PillTone tone) = execStatus(
+      connecting: _connecting,
+      failed: _error != null,
+      exitCode: _exitCode,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         if (widget.header != null) ...<Widget>[
-          widget.header!(
-            context,
-            _connecting ? 'Opening' : (live ? 'Live' : 'Closed'),
-            live
-                ? PillTone.accent
-                : (_connecting ? PillTone.warning : PillTone.neutral),
-          ),
+          widget.header!(context, status, tone),
           const SizedBox(height: 12),
         ],
         Expanded(child: _body(t)),
+        const SizedBox(height: 12),
+        Row(
+          children: <Widget>[
+            Icon(Icons.shield_outlined, size: 14, color: t.mutedText),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Admin only. Opening and closing it is in the Activity log.',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.tiny.copyWith(color: t.mutedText),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
         if (_exitCode != null)
           Row(
             children: <Widget>[
               Expanded(
                 child: Text(
-                  _exitCode == -1
+                  _exitCode! < 0
                       ? 'The session ended.'
                       : 'The shell exited with code $_exitCode.',
                   style: AppText.small.copyWith(color: t.mutedText),
@@ -268,13 +315,17 @@ class _ExecViewState extends ConsumerState<ExecView> {
               DoomButton(
                 'Open again',
                 icon: Icons.refresh,
-                height: buttonHeight,
-                radius: 14,
+                height: rowHeight,
+                radius: 12,
                 onPressed: _connect,
               ),
             ],
           )
-        else
+        else ...<Widget>[
+          if (touch) ...<Widget>[
+            _KeyRow(enabled: live, onKey: _sendKey),
+            const SizedBox(height: 12),
+          ],
           Row(
             children: <Widget>[
               Expanded(
@@ -282,22 +333,22 @@ class _ExecViewState extends ConsumerState<ExecView> {
                   controller: _input,
                   focusNode: _focus,
                   enabled: live,
+                  height: rowHeight,
                   onSubmitted: (_) => _submit(),
                 ),
               ),
               const SizedBox(width: 8),
-              DoomIconButton(
+              DoomButton(
+                'Send',
                 icon: Icons.keyboard_return,
-                semanticLabel: 'Send the command',
-                size: buttonHeight,
-                radius: 14,
-                filled: false,
-                fill: t.accent,
-                foreground: t.onAccent,
+                tone: ButtonTone.primary,
+                height: rowHeight,
+                radius: 12,
                 onPressed: live ? _submit : null,
               ),
             ],
           ),
+        ],
       ],
     );
   }
@@ -312,23 +363,101 @@ class _ExecViewState extends ConsumerState<ExecView> {
         WidgetsBinding.instance.addPostFrameCallback(
           (_) => _reportSize(constraints.biggest),
         );
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: t.codeBlock,
-            borderRadius: AppShape.smallCardRadius,
-            border: Border.all(color: t.faintDivider),
-          ),
-          child: SingleChildScrollView(
-            controller: _scroll,
-            child: SelectableText(
-              _buffer.isEmpty ? 'Waiting for the shell…' : _buffer.toString(),
-              style: AppText.logLine.copyWith(color: t.codeText),
+        return Semantics(
+          label: 'Terminal output',
+          container: true,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: t.codeBlock,
+              borderRadius: AppShape.smallCardRadius,
+              border: Border.all(color: t.faintDivider),
+            ),
+            child: SingleChildScrollView(
+              controller: _scroll,
+              child: SelectableText(
+                _buffer.toString(),
+                style: terminalTextStyle.copyWith(color: t.codeText),
+              ),
             ),
           ),
         );
       },
+    );
+  }
+}
+
+/// IBM Plex Mono 12.5 on 1.5 lines, the terminal surface on every board.
+const TextStyle terminalTextStyle = TextStyle(
+  fontFamily: AppFonts.mono,
+  fontSize: 12.5,
+  height: 1.5,
+);
+
+/// Tab, Ctrl+C, the two arrows and Esc, one row of equal keys.
+class _KeyRow extends StatelessWidget {
+  const _KeyRow({required this.enabled, required this.onKey});
+
+  final bool enabled;
+  final ValueChanged<TerminalKey> onKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    return Row(
+      children: <Widget>[
+        for (final TerminalKey key in TerminalKey.values) ...<Widget>[
+          if (key.index > 0) const SizedBox(width: 6),
+          Expanded(
+            child: Semantics(
+              button: true,
+              label: key.label,
+              excludeSemantics: true,
+              child: Opacity(
+                opacity: enabled ? 1 : 0.5,
+                child: Material(
+                  color: t.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: enabled ? () => onKey(key) : null,
+                    child: Container(
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: t.border),
+                      ),
+                      child: switch (key) {
+                        TerminalKey.up => Icon(
+                          Icons.arrow_upward,
+                          size: 18,
+                          color: t.text,
+                        ),
+                        TerminalKey.down => Icon(
+                          Icons.arrow_downward,
+                          size: 18,
+                          color: t.text,
+                        ),
+                        _ => Text(
+                          key.label,
+                          style: TextStyle(
+                            fontFamily: AppFonts.mono,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: t.text,
+                          ),
+                        ),
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -339,27 +468,32 @@ class _InputLine extends StatelessWidget {
     required this.focusNode,
     required this.enabled,
     required this.onSubmitted,
+    this.height = 44,
   });
 
   final TextEditingController controller;
   final FocusNode focusNode;
   final bool enabled;
   final ValueChanged<String> onSubmitted;
+  final double height;
 
   @override
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
     return Container(
-      height: 48,
+      height: height,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: t.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: t.border),
+        border: Border.all(color: t.strongBorder),
       ),
       child: Row(
         children: <Widget>[
-          Text(r'$', style: AppText.mono.copyWith(color: t.accent)),
+          Text(
+            r'$',
+            style: AppText.mono.copyWith(color: t.accent, fontSize: 14),
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
