@@ -361,7 +361,7 @@ void main() {
       expect(find.text('prod-eu-1'), findsNothing);
       expect(cog, findsNothing);
 
-      await tester.tap(find.text('Unlock'));
+      await tester.tap(find.text('Unlock with fingerprint or face'));
       await settle(tester);
       expect(find.text('Unlock Doomsaday'), findsNothing);
       expect(locationOf(tester), '/s/prod-eu-1/overview');
@@ -379,9 +379,11 @@ void main() {
       );
       expect(find.text('Unlock Doomsaday'), findsOneWidget);
 
-      await tester.tap(find.text('Unlock'));
+      await tester.tap(find.text('Unlock with fingerprint or face'));
       await settle(tester);
       expect(find.text('Unlock Doomsaday'), findsOneWidget);
+      // The refusal is said, not swallowed.
+      expect(find.text('That did not unlock. Try again.'), findsOneWidget);
       expect(find.byType(ServersScreen), findsNothing);
       await disposeApp(tester);
     });

@@ -15,6 +15,7 @@ class DoomButton extends StatelessWidget {
     required this.onPressed,
     this.tone = ButtonTone.outline,
     this.icon,
+    this.glyph,
     this.height = 44,
     this.radius = 12,
     this.expand = false,
@@ -25,6 +26,9 @@ class DoomButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final ButtonTone tone;
   final IconData? icon;
+
+  /// One of the design's stroke icons, drawn instead of [icon].
+  final StrokeGlyph? glyph;
   final double height;
   final double radius;
 
@@ -56,9 +60,11 @@ class DoomButton extends StatelessWidget {
             height: 16,
             child: CircularProgressIndicator(strokeWidth: 2, color: fg),
           )
+        else if (glyph != null)
+          StrokeIcon(glyph!, size: 18, color: fg)
         else if (icon != null)
           Icon(icon, size: 18, color: fg),
-        if (busy || icon != null) const SizedBox(width: 8),
+        if (busy || icon != null || glyph != null) const SizedBox(width: 8),
         Flexible(
           child: Text(
             label,

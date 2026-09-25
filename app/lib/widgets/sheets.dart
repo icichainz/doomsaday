@@ -11,6 +11,7 @@ import '../theme/app_theme.dart';
 import '../theme/tokens.dart';
 import 'buttons.dart';
 import 'primitives.dart';
+import 'stroke_icons.dart';
 import 'surfaces.dart';
 
 class _Heading extends StatelessWidget {
@@ -668,38 +669,83 @@ class LabelledField extends StatelessWidget {
   }
 }
 
+/// How the job sheet was left.
+enum JobSheetExit {
+  /// The job finished (or failed) and the person pressed "Done".
+  finished,
+
+  /// "Run in background": the job goes on without the sheet.
+  background,
+
+  /// "Cancel": the agent was asked to stop it.
+  canceled,
+}
+
 /// Progress modal for the long operations that come back as jobs.
-Future<void> showJobSheet(
+///
+/// Boards `JobSheet` (phone), `DesktopJob` (the 500 px dialog from 600 up)
+/// and `JobDone`: a heading with the job and the server, a progress bar with
+/// the percentage and the elapsed time, the agent's progress lines in mono,
+/// and "Cancel" (when the agent can) beside "Run in background". Finished, it
+/// says so and offers "Done"; failed, it shows the error code and "Show
+/// details" opens every progress line.
+Future<JobSheetExit> showJobSheet(
   BuildContext context, {
   required Job job,
   required Stream<Job> events,
-}) {
-  return showAdaptiveModal<void>(
+  String? serverName,
+  Future<void> Function()? onCancel,
+}) async {
+  final JobSheetExit? exit = await showAdaptiveModal<JobSheetExit>(
     context,
     dismissible: false,
-    builder: (BuildContext context, bool sheet) =>
-        _JobBody(initial: job, events: events, sheet: sheet),
+    builder: (BuildContext context, bool sheet) => JobProgressBody(
+      initial: job,
+      events: events,
+      sheet: sheet,
+      serverName: serverName,
+      onCancel: onCancel,
+    ),
   );
+  return exit ?? JobSheetExit.background;
 }
 
-class _JobBody extends StatefulWidget {
-  const _JobBody({
+/// The body of [showJobSheet], public so the design harness and the tests can
+/// pump it with a job of their own.
+class JobProgressBody extends StatefulWidget {
+  const JobProgressBody({
+    super.key,
     required this.initial,
     required this.events,
     required this.sheet,
+    this.serverName,
+    this.onCancel,
+    this.clock,
   });
 
   final Job initial;
   final Stream<Job> events;
   final bool sheet;
+  final String? serverName;
+  final Future<void> Function()? onCancel;
+
+  /// Now, for the elapsed time. Tests pass a fixed one.
+  final DateTime Function()? clock;
 
   @override
-  State<_JobBody> createState() => _JobBodyState();
+  State<JobProgressBody> createState() => _JobProgressBodyState();
 }
 
-class _JobBodyState extends State<_JobBody> {
+class _JobProgressBodyState extends State<JobProgressBody> {
   late Job _job = widget.initial;
   StreamSubscription<Job>? _subscription;
+  Timer? _ticker;
+  late final DateTime _opened = _now();
+  DateTime? _finishedSeen;
+  bool _details = false;
+  bool _canceling = false;
+
+  DateTime _now() => (widget.clock ?? DateTime.now)();
 
   @override
   void initState() {
@@ -707,82 +753,291 @@ class _JobBodyState extends State<_JobBody> {
     _subscription = widget.events.listen(
       (Job job) => setState(() => _job = job),
       onError: (Object error) => setState(() {
-        _job = _job.copyWith(status: JobStatus.failed, error: '$error');
+        _job = _job.copyWith(
+          status: JobStatus.failed,
+          error: error is AgentException ? error.message : '$error',
+          errorCode: error is AgentException ? error.code : null,
+        );
       }),
     );
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      if (_job.status.isFinished) {
+        _ticker?.cancel();
+        return;
+      }
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
+    _ticker?.cancel();
     super.dispose();
+  }
+
+  Duration get _elapsed {
+    final DateTime start = _job.startedAt ?? _opened;
+    DateTime end = _now();
+    if (_job.status.isFinished) {
+      _finishedSeen ??= _job.finishedAt ?? end;
+      end = _finishedSeen!;
+    }
+    final Duration d = end.difference(start);
+    return d.isNegative ? Duration.zero : d;
+  }
+
+  static String _clock(Duration d) {
+    final int minutes = d.inMinutes;
+    final int seconds = d.inSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _cancel() async {
+    final Future<void> Function()? cancel = widget.onCancel;
+    if (cancel == null || _canceling) return;
+    setState(() => _canceling = true);
+    try {
+      await cancel();
+      if (mounted) Navigator.of(context).pop(JobSheetExit.canceled);
+    } on AgentException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _canceling = false;
+        _job = _job.copyWith(error: error.message, errorCode: error.code);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
-    final bool done = _job.status.isFinished;
-    final bool failed =
-        _job.status == JobStatus.failed || _job.status == JobStatus.canceled;
-    return ModalBody(
-      handle: widget.sheet,
-      children: <Widget>[
-        _Heading(
-          icon: failed ? Icons.error_outline : Icons.play_circle_outline,
-          title: _job.title,
-          subtitle: switch (_job.status) {
-            JobStatus.queued => 'Queued on the agent',
-            JobStatus.running => 'Running on the agent',
-            JobStatus.succeeded => 'Finished',
-            JobStatus.canceled => 'Canceled',
-            JobStatus.failed => _job.error ?? 'Failed',
-          },
-          danger: failed,
-          compact: !widget.sheet,
+    final bool sheet = widget.sheet;
+    final JobStatus status = _job.status;
+    final bool done = status.isFinished;
+    final bool ok = status == JobStatus.succeeded;
+    final bool failed = done && !ok;
+    final String where = widget.serverName == null
+        ? ''
+        : '${widget.serverName} · ';
+    final String subtitle =
+        where +
+        switch (status) {
+          JobStatus.queued => 'Queued on the agent',
+          JobStatus.running => 'Running on the agent',
+          JobStatus.succeeded => 'Finished',
+          JobStatus.canceled => 'Canceled',
+          JobStatus.failed => 'Failed',
+        };
+    final StrokeGlyph glyph = ok
+        ? StrokeGlyph.check
+        : failed
+        ? StrokeGlyph.warning
+        : StrokeGlyph.download;
+    final double tile = sheet ? 48 : 44;
+
+    final List<String> lines = _job.lines;
+    final List<String> shown = _details || lines.length <= 5
+        ? lines
+        : lines.sublist(lines.length - 5);
+
+    final Widget statusLine = switch ((ok, failed)) {
+      (true, _) => Text(
+        'Finished without errors',
+        style: AppText.tiny.copyWith(
+          color: t.accent,
+          fontWeight: FontWeight.w600,
         ),
-        MeterBar(_job.progress, color: failed ? t.danger : t.accent),
-        Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 96),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: t.codeBlock,
-            borderRadius: AppShape.smallCardRadius,
-            border: Border.all(color: t.faintDivider),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              for (final String line in _job.lines)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: SelectableText(
-                    line,
-                    style: AppText.logLine.copyWith(color: t.codeText),
+      ),
+      (_, true) => Text(
+        _job.errorCode ??
+            (status == JobStatus.canceled ? 'job_canceled' : 'failed'),
+        style: AppText.monoSmall.copyWith(color: t.danger),
+      ),
+      _ => Text(
+        _job.hasPercent
+            ? '${(_job.progress * 100).round()}%'
+            : (status == JobStatus.queued ? 'Waiting' : 'Working'),
+        style: AppText.tiny.copyWith(color: t.mutedText),
+      ),
+    };
+
+    final double buttonHeight = sheet ? 54 : 40;
+    final double buttonRadius = sheet ? 16 : 10;
+    Widget button(
+      String label,
+      VoidCallback? onPressed, {
+      bool primary = false,
+      bool busy = false,
+    }) => DoomButton(
+      label,
+      tone: primary ? ButtonTone.primary : ButtonTone.outline,
+      expand: sheet,
+      busy: busy,
+      height: buttonHeight,
+      radius: buttonRadius,
+      onPressed: onPressed,
+    );
+    final List<Widget> buttons = <Widget>[
+      if (!done) ...<Widget>[
+        if (widget.onCancel != null)
+          button('Cancel', _cancel, busy: _canceling),
+        button(
+          'Run in background',
+          () => Navigator.of(context).pop(JobSheetExit.background),
+          primary: true,
+        ),
+      ] else ...<Widget>[
+        if (failed && !_details && lines.isNotEmpty)
+          button('Show details', () => setState(() => _details = true)),
+        button(
+          'Done',
+          () => Navigator.of(context).pop(JobSheetExit.finished),
+          primary: true,
+        ),
+      ],
+    ];
+
+    return ModalBody(
+      handle: sheet,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Container(
+              width: tile,
+              height: tile,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: failed ? t.dangerTint : t.accentTint,
+                borderRadius: BorderRadius.circular(sheet ? 16 : 14),
+              ),
+              child: StrokeIcon(
+                glyph,
+                size: sheet ? 22 : 20,
+                color: failed ? t.danger : t.accent,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    _job.title,
+                    style:
+                        (sheet
+                                ? AppText.sheetTitle
+                                : AppText.sheetTitle.copyWith(fontSize: 22))
+                            .copyWith(color: t.text),
                   ),
-                ),
-              if (_job.lines.isEmpty)
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppText.small.copyWith(color: t.mutedText),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Semantics(
+              label: 'Progress',
+              value: '${(_job.progress * 100).round()}%',
+              child: MeterBar(
+                _job.progress,
+                color: failed ? t.danger : t.accent,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: <Widget>[
+                Expanded(child: statusLine),
                 Text(
-                  'Waiting for the first progress line…',
-                  style: AppText.logLine.copyWith(color: t.mutedText),
+                  '${_clock(_elapsed)} elapsed',
+                  style: AppText.monoSmall.copyWith(color: t.mutedText),
                 ),
+              ],
+            ),
+          ],
+        ),
+        if (failed && _job.error != null)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: t.dangerTint,
+              borderRadius: BorderRadius.circular(sheet ? 14 : 12),
+              border: Border.all(color: t.dangerBorder),
+            ),
+            child: Text(
+              _job.error!,
+              style: AppText.body.copyWith(color: t.text, height: 1.5),
+            ),
+          ),
+        if (!failed || _details)
+          Container(
+            constraints: BoxConstraints(
+              minHeight: 96,
+              maxHeight: _details ? 260 : double.infinity,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: t.codeBlock,
+              borderRadius: BorderRadius.circular(sheet ? 16 : 12),
+              border: Border.all(color: t.faintDivider),
+            ),
+            child: SingleChildScrollView(
+              reverse: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  for (int i = 0; i < shown.length; i++) ...<Widget>[
+                    if (i > 0) const SizedBox(height: 4),
+                    SelectableText(
+                      shown[i],
+                      style: AppText.monoSmall.copyWith(
+                        color: t.codeText,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                  if (shown.isEmpty)
+                    Text(
+                      'Waiting for the first progress line…',
+                      style: AppText.monoSmall.copyWith(
+                        color: t.mutedText,
+                        height: 1.5,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        if (sheet)
+          Row(
+            children: <Widget>[
+              for (int i = 0; i < buttons.length; i++) ...<Widget>[
+                if (i > 0) const SizedBox(width: 10),
+                Expanded(child: buttons[i]),
+              ],
+            ],
+          )
+        else
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: <Widget>[
+              for (int i = 0; i < buttons.length; i++) ...<Widget>[
+                if (i > 0) const SizedBox(width: 10),
+                buttons[i],
+              ],
             ],
           ),
-        ),
-        Align(
-          alignment: widget.sheet
-              ? Alignment.center
-              : AlignmentDirectional.centerEnd,
-          child: DoomButton(
-            done ? 'Done' : 'Run in the background',
-            expand: widget.sheet,
-            height: widget.sheet ? 54 : 40,
-            radius: widget.sheet ? 16 : 10,
-            tone: done ? ButtonTone.primary : ButtonTone.outline,
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ),
       ],
     );
   }

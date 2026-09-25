@@ -11,6 +11,7 @@ import '../../widgets/context_menu.dart';
 import '../../widgets/desktop.dart';
 import '../../widgets/filter_field.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 import '../../widgets/table.dart';
 
 class ResourceChip<T> {
@@ -108,7 +109,7 @@ class _ResourceTableState<T> extends State<ResourceTable<T>> {
         const SizedBox(height: 16),
         if (rows.isEmpty)
           EmptyView(
-            icon: Icons.search_off,
+            glyph: StrokeGlyph.search,
             title: widget.emptyTitle,
             message: 'Nothing here matches this filter.',
           )

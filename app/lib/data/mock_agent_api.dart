@@ -22,6 +22,7 @@ class MockAgentApi implements AgentApi {
   final Map<String, StreamController<Job>> _jobStreams =
       <String, StreamController<Job>>{};
   int _jobCounter = 0;
+  final Map<String, Timer> _jobTimers = <String, Timer>{};
   int _logCounter = 0;
 
   /// How many log streams this agent is currently serving. The log wall must
@@ -43,6 +44,10 @@ class MockAgentApi implements AgentApi {
 
   @override
   void dispose() {
+    for (final Timer timer in _jobTimers.values) {
+      timer.cancel();
+    }
+    _jobTimers.clear();
     for (final StreamController<Job> controller in _jobStreams.values) {
       if (!controller.isClosed) controller.close();
     }
@@ -1310,6 +1315,29 @@ class MockAgentApi implements AgentApi {
   Stream<Job> jobEvents(String id) =>
       _jobStreams[id]?.stream ?? const Stream<Job>.empty();
 
+  @override
+  bool get canCancelJobs => true;
+
+  @override
+  Future<void> cancelJob(String id) async {
+    final Job? current = _jobs[id];
+    final Timer? timer = _jobTimers.remove(id);
+    if (current == null || timer == null || current.status.isFinished) return;
+    timer.cancel();
+    final Job canceled = current.copyWith(
+      status: JobStatus.canceled,
+      error: 'job was canceled',
+      errorCode: 'job_canceled',
+      finishedAt: DateTime.now(),
+    );
+    _jobs[id] = canceled;
+    final StreamController<Job>? controller = _jobStreams[id];
+    if (controller != null && !controller.isClosed) {
+      controller.add(canceled);
+      await controller.close();
+    }
+  }
+
   Future<Job> _startJob(
     String type,
     String target,
@@ -1325,17 +1353,25 @@ class MockAgentApi implements AgentApi {
       status: JobStatus.running,
       progress: 0,
       progressLines: const <JobLine>[],
+      startedAt: DateTime.now(),
     );
     _jobs[id] = current;
     final StreamController<Job> controller = StreamController<Job>.broadcast();
     _jobStreams[id] = controller;
 
     int step = 0;
-    Timer.periodic(const Duration(milliseconds: 520), (Timer timer) {
+    _jobTimers[id] = Timer.periodic(const Duration(milliseconds: 520), (
+      Timer timer,
+    ) {
       if (step >= steps.length) {
         timer.cancel();
+        _jobTimers.remove(id);
         onDone();
-        current = current.copyWith(status: JobStatus.succeeded, progress: 1);
+        current = current.copyWith(
+          status: JobStatus.succeeded,
+          progress: 1,
+          finishedAt: DateTime.now(),
+        );
         _jobs[id] = current;
         controller.add(current);
         controller.close();

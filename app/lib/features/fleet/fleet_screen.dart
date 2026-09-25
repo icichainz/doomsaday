@@ -15,6 +15,7 @@ import '../../widgets/context_menu.dart';
 import '../../widgets/desktop.dart';
 import '../../widgets/filter_field.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 import '../../widgets/table.dart';
 import '../containers/container_actions.dart';
 import '../logwall/log_wall_controller.dart';
@@ -84,33 +85,20 @@ class _FleetScreenState extends ConsumerState<FleetScreen> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 460),
           child: EmptyView(
-            icon: Icons.dns_outlined,
+            glyph: StrokeGlyph.servers,
             title: 'No servers yet',
-            message:
-                'Install the agent on a host and pair it to see it here, or '
-                'take a look around with sample data first.',
-            action: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
-              children: <Widget>[
-                DoomButton(
-                  'Pair a server',
-                  icon: Icons.add,
-                  tone: ButtonTone.primary,
-                  onPressed: () => showPairAgent(context, ref),
-                ),
-                DoomButton(
-                  'Explore with demo data',
-                  icon: Icons.science_outlined,
-                  onPressed: () async {
-                    await ref.read(serversRepositoryProvider).enterDemoMode();
-                    ref
-                      ..invalidate(serverCardsProvider)
-                      ..invalidate(fleetProvider);
-                  },
-                ),
-              ],
+            message: 'Pair an agent, or look around with sample data.',
+            primary: EmptyAction(
+              'Pair a new server',
+              icon: Icons.add,
+              onPressed: () => showPairAgent(context, ref),
+            ),
+            secondary: EmptyAction(
+              'Explore with demo data',
+              onPressed: () async {
+                await ref.read(demoModeProvider.notifier).set(true);
+                ref.invalidate(fleetProvider);
+              },
             ),
           ),
         ),
@@ -209,7 +197,7 @@ class _FleetScreenState extends ConsumerState<FleetScreen> {
         const SizedBox(height: 16),
         if (rows.isEmpty)
           const EmptyView(
-            icon: Icons.search_off,
+            glyph: StrokeGlyph.search,
             title: 'No containers',
             message: 'Nothing on the online agents matches this filter.',
           )

@@ -13,6 +13,7 @@ import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 import 'container_actions.dart';
 import 'containers_pane.dart';
 
@@ -36,6 +37,21 @@ class _ContainersScreenState extends ConsumerState<ContainersScreen> {
     _search.dispose();
     super.dispose();
   }
+
+  /// Board `EmptyStates`, last card: a search or a state chip that leaves
+  /// nothing, with the one button that undoes both.
+  Widget _noMatch() => EmptyView(
+    glyph: StrokeGlyph.search,
+    title: 'No matching containers',
+    message: 'Nothing here matches that search.',
+    secondary: EmptyAction(
+      'Clear filter',
+      onPressed: () => setState(() {
+        _filter = ContainerFilter.all;
+        _search.clear();
+      }),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -100,14 +116,13 @@ class _ContainersScreenState extends ConsumerState<ContainersScreen> {
           loadingRows: 5,
           isEmpty: (List<ContainerSummary> list) =>
               list.where(_filter.matches).isEmpty,
-          empty: EmptyView(
-            icon: Icons.view_in_ar_outlined,
-            title:
-                'No ${_filter == ContainerFilter.all ? '' : '${_filter.label.toLowerCase()} '}containers',
-            message: _filter == ContainerFilter.all
-                ? 'Nothing is deployed on this host yet.'
-                : 'Nothing matches this filter right now.',
-          ),
+          empty: _filter == ContainerFilter.all
+              ? const EmptyView(
+                  glyph: StrokeGlyph.containers,
+                  title: 'No containers',
+                  message: 'Nothing is deployed on this host yet.',
+                )
+              : _noMatch(),
           builder: (List<ContainerSummary> list) {
             final List<ContainerSummary> shown = list
                 .where(_filter.matches)
@@ -118,13 +133,7 @@ class _ContainersScreenState extends ConsumerState<ContainersScreen> {
                       c.image.toLowerCase().contains(query),
                 )
                 .toList(growable: false);
-            if (shown.isEmpty) {
-              return const EmptyView(
-                icon: Icons.search_off,
-                title: 'No matching containers',
-                message: 'Nothing here matches that search.',
-              );
-            }
+            if (shown.isEmpty) return _noMatch();
             return RowGroup(
               trailingPadding: 6,
               children: <Widget>[

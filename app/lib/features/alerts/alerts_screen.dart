@@ -13,6 +13,7 @@ import '../../widgets/desktop.dart';
 import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 
 /// Screen 4 — Alerts and the rules the agent checks.
 class AlertsScreen extends ConsumerWidget {
@@ -41,10 +42,10 @@ class AlertsScreen extends ConsumerWidget {
       loadingRowHeight: 118,
       isEmpty: (List<AlertInfo> list) => list.isEmpty,
       empty: const EmptyView(
-        icon: Icons.notifications_off_outlined,
-        title: 'No alerts',
-        message:
-            'Nothing has fired on this server. Rules still run on the agent.',
+        glyph: StrokeGlyph.checkCircle,
+        tone: EmptyTone.healthy,
+        title: 'Nothing needs attention',
+        message: 'No alert rule has fired on this server.',
       ),
       builder: (List<AlertInfo> list) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

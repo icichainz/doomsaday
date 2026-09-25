@@ -26,6 +26,7 @@ import '../../widgets/desktop.dart';
 import '../../widgets/filter_field.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 import '../../widgets/surfaces.dart';
 import 'log_wall_controller.dart';
 
@@ -118,15 +119,14 @@ class _LogWallScreenState extends ConsumerState<LogWallScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),
                 child: EmptyView(
-                  icon: Icons.grid_view_outlined,
+                  glyph: StrokeGlyph.logWall,
                   title: 'No panes yet',
                   message:
                       'Add up to ${LogWallController.maxPanes} containers from '
                       'any paired server and watch their logs side by side.',
-                  action: DoomButton(
+                  primary: EmptyAction(
                     'Add pane',
                     icon: Icons.add,
-                    tone: ButtonTone.primary,
                     onPressed: _addPane,
                   ),
                 ),

@@ -1,10 +1,12 @@
-/// The capture helpers of `screens_test.dart`, public so every board file
-/// under `tool/design_review/` can share them.
+/// The capture helpers shared by every design-review screenshot file:
+/// `screens_test.dart` and the per-branch `screens_<branch>_test.dart`.
 ///
-/// Same behaviour as the originals: the whole app in demo mode at a board's
-/// exact size, device pixel ratio 1, real fonts, one PNG per board into
-/// `--dart-define=REVIEW_OUT=`. `screens_test.dart` keeps its own private
-/// copies so it runs unchanged.
+/// The whole app in demo mode at a board's exact size, device pixel ratio 1,
+/// the real fonts, a `RepaintBoundary` around it, one PNG per board into
+/// `--dart-define=REVIEW_OUT=` ([reviewOut]). [pumpApp] also takes
+/// [Preferences] (for the app lock) and can stop before the first settle (for
+/// a loading state). See `screens_test.dart` for how these files are run.
+/// Nothing here is a test on its own.
 library;
 
 import 'dart:io';
@@ -39,13 +41,13 @@ const Size kDesktop = Size(1440, 900);
 const String kServer = 'prod-eu-1';
 const String kApiGateway = '4f2a9c1e7b3d';
 
-const String _outDefine = String.fromEnvironment(
+const String reviewOut = String.fromEnvironment(
   'REVIEW_OUT',
   defaultValue: '../review/app/unknown',
 );
 const String _materialFontsDefine = String.fromEnvironment('MATERIAL_FONTS');
 
-final GlobalKey _rootKey = GlobalKey();
+final GlobalKey reviewRootKey = GlobalKey();
 
 // -------------------------------------------------------------------- fonts
 
@@ -124,12 +126,14 @@ ServersRepository pairedRepository() => ServersRepository.pairedMocks(
 );
 
 /// The whole app, with the edition left to the compile-time constant.
-Future<void> pumpBoard(
+Future<void> pumpApp(
   WidgetTester tester, {
   required Size size,
   ThemeMode themeMode = ThemeMode.dark,
   ServersRepository? repository,
   Authenticator authenticator = const AlwaysConfirms(),
+  Preferences? preferences,
+  bool settleFirst = true,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -144,7 +148,7 @@ Future<void> pumpBoard(
   });
   await tester.pumpWidget(
     RepaintBoundary(
-      key: _rootKey,
+      key: reviewRootKey,
       child: ProviderScope(
         overrides: <Override>[
           serversRepositoryProvider.overrideWithValue(
@@ -153,7 +157,9 @@ Future<void> pumpBoard(
           authenticatorProvider.overrideWithValue(authenticator),
           preferencesProvider.overrideWith(
             (ref) => PreferencesController.inMemory(
-              Preferences(themeMode: themeMode),
+              (preferences ?? const Preferences()).copyWith(
+                themeMode: themeMode,
+              ),
             ),
           ),
         ],
@@ -161,7 +167,7 @@ Future<void> pumpBoard(
       ),
     ),
   );
-  await settle(tester);
+  if (settleFirst) await settle(tester);
 }
 
 /// The mock answers after a few hundred milliseconds and its log and stats
@@ -195,13 +201,13 @@ Future<void> teardown(WidgetTester tester) async {
 Future<void> shoot(WidgetTester tester, String name) async {
   await tester.runAsync(() async {
     final RenderRepaintBoundary boundary =
-        _rootKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        reviewRootKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage();
     final ByteData? png = await image.toByteData(
       format: ui.ImageByteFormat.png,
     );
     image.dispose();
-    final File file = File('$_outDefine/$name.png');
+    final File file = File('$reviewOut/$name.png');
     file.parent.createSync(recursive: true);
     file.writeAsBytesSync(png!.buffer.asUint8List());
     stdout.writeln('  shot $name (${png.lengthInBytes} B)');
@@ -221,6 +227,8 @@ void board(
   ServersRepository Function()? repository,
   Authenticator authenticator = const AlwaysConfirms(),
   TargetPlatform platform = TargetPlatform.android,
+  Preferences? preferences,
+  bool settleFirst = true,
 }) {
   testWidgets(name, (WidgetTester tester) async {
     // Reset inside the body: the binding asserts the override is unset again
@@ -228,12 +236,14 @@ void board(
     if (platform != TargetPlatform.android) {
       debugDefaultTargetPlatformOverride = platform;
     }
-    await pumpBoard(
+    await pumpApp(
       tester,
       size: size,
       themeMode: themeMode,
       repository: repository?.call(),
       authenticator: authenticator,
+      preferences: preferences,
+      settleFirst: settleFirst,
     );
     await drive(tester);
     await shoot(tester, name);
@@ -249,6 +259,7 @@ void desktopBoard(
   ThemeMode themeMode = ThemeMode.dark,
   ServersRepository Function()? repository,
   Authenticator authenticator = const AlwaysConfirms(),
+  Preferences? preferences,
 }) => board(
   name,
   kDesktop,
@@ -257,4 +268,5 @@ void desktopBoard(
   repository: repository,
   authenticator: authenticator,
   platform: TargetPlatform.macOS,
+  preferences: preferences,
 );

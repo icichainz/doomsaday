@@ -180,60 +180,69 @@ class _LockScreenState extends ConsumerState<LockScreen> {
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
     final Edition edition = ref.watch(editionProvider);
+    // Below 600 the button spans the phone; from there it is a 320 px
+    // desktop button in the middle of the window.
+    final bool compact = MediaQuery.sizeOf(context).width >= 600;
     return Scaffold(
       backgroundColor: t.ground,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                width: 72,
-                height: 72,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: edition.isPro ? t.proRed : t.accent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'D',
-                  style: TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 40,
-                    fontWeight: FontWeight.w700,
-                    color: edition.isPro ? t.proInk : t.onAccent,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: compact ? 320 : 400),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  width: 72,
+                  height: 72,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: edition.isPro ? t.proRed : t.accent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'D',
+                    style: TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w700,
+                      color: edition.isPro ? t.proInk : t.onAccent,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 22),
-              Text(
-                'Unlock Doomsaday',
-                textAlign: TextAlign.center,
-                style: AppText.sheetTitle.copyWith(color: t.text),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _refused
-                    ? 'That did not unlock. Try $lockMethodLabel again.'
-                    : 'Your servers stay out of sight until you unlock with '
-                          '$lockMethodLabel.',
-                textAlign: TextAlign.center,
-                style: AppText.body.copyWith(
-                  color: _refused ? t.danger : t.mutedText,
-                  height: 1.5,
+                const SizedBox(height: 22),
+                Text(
+                  'Unlock Doomsaday',
+                  textAlign: TextAlign.center,
+                  style: AppText.sheetTitle.copyWith(color: t.text),
                 ),
-              ),
-              const SizedBox(height: 24),
-              DoomButton(
-                'Unlock',
-                busy: _busy,
-                tone: ButtonTone.primary,
-                height: 52,
-                radius: 16,
-                onPressed: _unlock,
-              ),
-            ],
+                const SizedBox(height: 8),
+                // Boards `LockScreen` / `DesktopLock`: one line, which turns into
+                // the refusal when the prompt was cancelled or failed.
+                Text(
+                  _refused
+                      ? 'That did not unlock. Try again.'
+                      : 'Your servers stay out of sight until you unlock.',
+                  textAlign: TextAlign.center,
+                  style: AppText.body.copyWith(
+                    fontSize: 15,
+                    color: _refused ? t.danger : t.mutedText,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                DoomButton(
+                  lockSettingLabel,
+                  busy: _busy,
+                  tone: ButtonTone.primary,
+                  expand: true,
+                  height: compact ? 44 : 56,
+                  radius: compact ? 12 : 18,
+                  onPressed: _unlock,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Container logs (light)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:#F3F5F4;color:#15201E}
+a{color:#0B7A5C;text-decoration:none}a:hover{color:#075E46}
+button,input{font-family:inherit}
+</style>
+<main style="width: 1440px; height: 900px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #F3F5F4; color: #15201E; text-align: center;">
+<div role="img" aria-label="Doomsaday" style="width: 72px; height: 72px; border-radius: 20px; display: flex; align-items: center; justify-content: center; background: {{accent}}; color: #FFFFFF; font-family: 'Bricolage Grotesque', sans-serif; font-size: 40px; font-weight: 700;">D</div>
+<h1 style="margin: 22px 0 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.3px;">Unlock Doomsaday</h1>
+<p style="margin: 8px 0 0; max-width: 340px; font-size: 15px; line-height: 1.5; color: #55656B;">Your servers stay out of sight until you unlock.</p>
+<button type="button" style="width: 320px; margin-top: 28px; height: 44px; border-radius: 12px; border: 0; background: {{accent}}; color: #FFFFFF; font-size: 14px; font-weight: 600;">Unlock with Touch ID</button>
+</main>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0B7A5C","options":["#0B7A5C","#1F5FBF","#8A5200"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#0B7A5C' };
+}
+}
+</script>
+</body>
+</html>
