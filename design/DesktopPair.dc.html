@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Desktop pair confirmation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:#0E1417;color:#E8EEF0}
+a{color:#5BE3B0;text-decoration:none}a:hover{color:#8FF0CB}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #0E1417; color: #E8EEF0; font-family: 'IBM Plex Sans', sans-serif;">
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px;">
+<dc-import name="DesktopFleet" accent="{{accent}}" hint-size="1440px,900px"></dc-import>
+</div>
+<div style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(4, 7, 9, 0.72);"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="pair-title" style="position: absolute; left: 440px; top: 150px; width: 560px; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 16px; border-radius: 20px; background: #161E22; border: 1px solid #2A363C;">
+<div style="display: flex; align-items: center; gap: 10px;"><span style="flex: 1 1 0; font-size: 12px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #9AAAB1;">Pair a server · step 2 of 2</span><a href="DesktopFleet.dc.html" aria-label="Close" style="width: 32px; height: 32px; margin: -6px -6px -6px 0; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #C9D6DB;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></a></div>
+<div style="display: flex; align-items: center; gap: 14px;"><div style="flex-shrink: 0; width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: #15302A; color: #5BE3B0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.500-3.200 8-8 9-4.800-1-8-4.500-8-9V6z"></path></svg></div><div style="display: flex; flex-direction: column; gap: 2px;"><h1 id="pair-title" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.3px;">Trust this certificate?</h1><div style="font-size: 13px; color: #9AAAB1;">edge-1 · <span style="font-family: 'IBM Plex Mono', monospace;">edge-1.example.com:8443</span></div></div></div>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #C9D6DB;">The agent answered, and the fingerprint it reported matches the certificate it presented. Compare it with what the agent printed on the host, then pin it. The app refuses the connection if it ever changes.</p>
+<div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border-radius: 12px; background: #0A0F11; border: 1px solid #243036;"><div style="font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #9AAAB1;">SHA-256 fingerprint</div><code style="display: flex; flex-direction: column; gap: 2px; font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500; line-height: 1.6; color: #E8EEF0; user-select: text;"><div style="display: flex; gap: 22px;"><span>A4:E9:7C:10</span><span>3B:65:D2:8F</span></div><div style="display: flex; gap: 22px;"><span>41:0A:96:BE</span><span>57:2D:C8:34</span></div><div style="display: flex; gap: 22px;"><span>1F:70:AB:59</span><span>E3:06:8D:C1</span></div><div style="display: flex; gap: 22px;"><span>75:42:9B:E0</span><span>13:6A:2F:5C</span></div></code></div>
+<div style="display: flex; flex-direction: column; border-radius: 12px; background: #161E22; border: 1px solid #243036; padding: 0 14px;">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid #1E282D;"><span style="flex: 1 1 0; font-size: 14px; color: #9AAAB1;">Agent version</span><span style="font-size: 13px;">1.5.0</span></div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid #1E282D;"><span style="flex: 1 1 0; font-size: 14px; color: #9AAAB1;">Your role</span><span style="font-size: 13px;">Admin</span></div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 44px;"><span style="flex: 1 1 0; font-size: 14px; color: #9AAAB1;">Device id</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px;">dev-1</span></div>
+</div>
+<div style="display: flex; align-items: center; gap: 10px;"><button type="button" style="display: flex; align-items: center; gap: 4px; height: 40px; padding: 0 4px; border: 0; background: transparent; color: #9AAAB1; font-size: 14px; font-weight: 500;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg><span>Back</span></button><div style="flex: 1 1 0;"></div><button type="button" style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; box-sizing: border-box; padding: 0 14px; flex-shrink: 0; border-radius: 10px; background: transparent; border: 1px solid #3A4A52; color: #E8EEF0; font-size: 14px; font-weight: 600; white-space: nowrap;"><span>Cancel</span></button><button type="button" style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; box-sizing: border-box; padding: 0 14px; flex-shrink: 0; border-radius: 10px; background: {{accent}}; border: 1px solid {{accent}}; color: #0E1417; font-size: 14px; font-weight: 600; white-space: nowrap;"><span>Pin and pair</span></button></div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#5BE3B0","options":["#5BE3B0","#6CB8FF","#F2B45A"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#5BE3B0' };
+}
+}
+</script>
+</body>
+</html>
