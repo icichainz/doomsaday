@@ -82,6 +82,18 @@ class _ServersScreenState extends ConsumerState<ServersScreen> {
     // With nothing paired the empty state owns the call to action, so the
     // pinned bottom bar steps aside rather than offering it a second time.
     final bool empty = cards.valueOrNull?.isEmpty ?? false;
+    final String subtitle = cards.maybeWhen(
+      data: (List<ServerCard> list) {
+        final int online = list.where((ServerCard c) => c.online).length;
+        if (repo.isDemo) {
+          return 'Demo data · ${list.length} sample agents · $online online';
+        }
+        if (list.isEmpty) return 'No paired agents yet';
+        return '${list.length} paired agent${list.length == 1 ? '' : 's'} · '
+            '$online online';
+      },
+      orElse: () => 'Checking agents…',
+    );
 
     return Scaffold(
       backgroundColor: t.ground,
@@ -94,14 +106,9 @@ class _ServersScreenState extends ConsumerState<ServersScreen> {
               ScreenHeader(
                 title: 'Servers',
                 large: true,
-                subtitle: cards.maybeWhen(
-                  data: (List<ServerCard> list) => repo.isDemo
-                      ? 'Demo data · ${list.length} sample agents · '
-                            '${list.where((ServerCard c) => c.online).length} online'
-                      : '${list.length} paired agent${list.length == 1 ? '' : 's'} · '
-                            '${list.where((ServerCard c) => c.online).length} online',
-                  orElse: () => 'Checking agents…',
-                ),
+                // Board `MainDemo`: the longer demo line does not fit beside
+                // the two buttons, so it runs full width under the row.
+                subtitle: repo.isDemo ? null : subtitle,
                 actions: <Widget>[
                   // Board `Main`: the cog sits left of the add button, and is
                   // the phone's only way into the app's own settings.
@@ -118,11 +125,24 @@ class _ServersScreenState extends ConsumerState<ServersScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              _SearchField(
-                controller: _search,
-                onChanged: (_) => setState(() {}),
-              ),
+              if (repo.isDemo) ...<Widget>[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.label.copyWith(color: t.mutedText),
+                ),
+              ],
+              // Board `EmptyStates`: with nothing paired there is nothing to
+              // search, so the field steps aside with the pinned button.
+              if (!empty) ...<Widget>[
+                const SizedBox(height: 16),
+                _SearchField(
+                  controller: _search,
+                  onChanged: (_) => setState(() {}),
+                ),
+              ],
               const SizedBox(height: 16),
               Expanded(
                 child: AsyncSection<List<ServerCard>>(
@@ -131,32 +151,21 @@ class _ServersScreenState extends ConsumerState<ServersScreen> {
                   loadingRows: 3,
                   loadingRowHeight: 118,
                   isEmpty: (List<ServerCard> list) => list.isEmpty,
-                  empty: EmptyView(
-                    icon: Icons.dns_outlined,
-                    title: 'No servers yet',
-                    message:
-                        'Install the agent on a host and pair it to see it '
-                        'here, or take a look around with sample data first.',
-                    action: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        DoomButton(
-                          'Pair a new server',
-                          icon: Icons.add,
-                          tone: ButtonTone.primary,
-                          height: 52,
-                          radius: 16,
-                          onPressed: () => showPairAgent(context, ref),
-                        ),
-                        const SizedBox(height: 10),
-                        DoomButton(
-                          'Explore with demo data',
-                          icon: Icons.science_outlined,
-                          height: 48,
-                          radius: 16,
-                          onPressed: _enterDemo,
-                        ),
-                      ],
+                  empty: SingleChildScrollView(
+                    child: EmptyView(
+                      glyph: StrokeGlyph.servers,
+                      title: 'No servers yet',
+                      message:
+                          'Pair an agent, or look around with sample data.',
+                      primary: EmptyAction(
+                        'Pair a new server',
+                        icon: Icons.add,
+                        onPressed: () => showPairAgent(context, ref),
+                      ),
+                      secondary: EmptyAction(
+                        'Explore with demo data',
+                        onPressed: _enterDemo,
+                      ),
                     ),
                   ),
                   builder: (List<ServerCard> list) {
@@ -169,10 +178,16 @@ class _ServersScreenState extends ConsumerState<ServersScreen> {
                         )
                         .toList(growable: false);
                     if (shown.isEmpty) {
-                      return const EmptyView(
-                        icon: Icons.search_off,
-                        title: 'No matching servers',
-                        message: 'Nothing here matches that search.',
+                      return SingleChildScrollView(
+                        child: EmptyView(
+                          glyph: StrokeGlyph.search,
+                          title: 'No matching servers',
+                          message: 'Nothing here matches that search.',
+                          secondary: EmptyAction(
+                            'Clear search',
+                            onPressed: () => setState(_search.clear),
+                          ),
+                        ),
                       );
                     }
                     return ListView.separated(
@@ -210,7 +225,7 @@ class _ServersScreenState extends ConsumerState<ServersScreen> {
                       const SizedBox(width: 8),
                       DoomButton(
                         'Leave demo',
-                        icon: Icons.logout,
+                        glyph: StrokeGlyph.leave,
                         height: 56,
                         radius: 18,
                         onPressed: _leaveDemo,

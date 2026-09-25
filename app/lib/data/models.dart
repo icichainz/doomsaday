@@ -1978,6 +1978,9 @@ class Job {
     required this.progress,
     required this.progressLines,
     this.error,
+    this.errorCode,
+    this.startedAt,
+    this.finishedAt,
   });
 
   final String id;
@@ -1989,6 +1992,18 @@ class Job {
   final double progress;
   final List<JobLine> progressLines;
   final String? error;
+
+  /// The agent's error code for a failed job: `registry_auth_failed`.
+  final String? errorCode;
+
+  /// `started_at` and `finished_at`, for the elapsed time the sheet shows.
+  final DateTime? startedAt;
+  final DateTime? finishedAt;
+
+  /// True when the agent reported a real percentage, rather than the creep
+  /// [progress] falls back to.
+  bool get hasPercent =>
+      progressLines.isNotEmpty && progressLines.last.percent >= 0;
 
   List<String> get lines =>
       progressLines.map((JobLine l) => l.text).toList(growable: false);
@@ -2018,6 +2033,9 @@ class Job {
     double? progress,
     List<JobLine>? progressLines,
     String? error,
+    String? errorCode,
+    DateTime? startedAt,
+    DateTime? finishedAt,
   }) => Job(
     id: id,
     type: type,
@@ -2026,6 +2044,9 @@ class Job {
     progress: progress ?? this.progress,
     progressLines: progressLines ?? this.progressLines,
     error: error ?? this.error,
+    errorCode: errorCode ?? this.errorCode,
+    startedAt: startedAt ?? this.startedAt,
+    finishedAt: finishedAt ?? this.finishedAt,
   );
 
   factory Job.fromJson(Map<String, Object?> json) {
@@ -2047,6 +2068,10 @@ class Job {
                 : _fallbackProgress(lines)),
       progressLines: lines,
       error: error is Map<String, Object?> ? _str(error['message']) : null,
+      errorCode: error is Map<String, Object?> ? _str(error['code']) : null,
+      startedAt:
+          _timeOrNull(json['started_at']) ?? _timeOrNull(json['created_at']),
+      finishedAt: _timeOrNull(json['finished_at']),
     );
   }
 

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Container logs (light)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:#F3F5F4;color:#15201E}
+a{color:#0B7A5C;text-decoration:none}a:hover{color:#075E46}
+button,input{font-family:inherit}
+</style>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #F3F5F4; color: #15201E; font-family: 'IBM Plex Sans', sans-serif;">
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 390px; height: 844px; overflow: hidden;">
+<dc-import name="AppSettingsLight" accent="{{accent}}" hint-size="390px,1320px"></dc-import>
+</div>
+<div style="position: absolute; left: 0; top: 0; width: 390px; height: 844px; background: rgba(21, 32, 30, 0.45);"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="pu-title" style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 16px; border-radius: 28px 28px 0 0; background: #FFFFFF; border-top: 1px solid #CFD8D6;">
+<div aria-hidden="true" style="align-self: center; width: 40px; height: 4px; border-radius: 2px; background: #B5C2BF;"></div>
+<div style="display: flex; align-items: center; gap: 14px;">
+<span style="flex-shrink: 0; width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: #9E1B1B; color: #FAF3E8; font-size: 12px; font-weight: 600; letter-spacing: 0.8px;">PRO</span>
+<div style="min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<h1 id="pu-title" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.3px; line-height: 1.2;">Doomsaday Pro is not on sale yet</h1>
+</div>
+</div>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #2B3A3F;">There is no store listing to send you to. When Pro arrives it adds these, and nothing you have paired changes.</p>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px;">
+<li style="display: flex; align-items: center; gap: 12px;">
+<span style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #E9EEEC; color: #15201E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="2"></rect><rect x="3" y="13" width="18" height="7" rx="2"></rect><path d="M7 7.5h.01M7 16.5h.01"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0;"><span style="font-size: 15px; font-weight: 600;">Unlimited servers</span><span style="font-size: 13px; color: #55656B;">Free pairs two.</span></span>
+</li>
+<li style="display: flex; align-items: center; gap: 12px;">
+<span style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #E9EEEC; color: #15201E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"></rect><rect x="13" y="3" width="8" height="8" rx="1.5"></rect><rect x="3" y="13" width="8" height="8" rx="1.5"></rect><rect x="13" y="13" width="8" height="8" rx="1.5"></rect></svg></span>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0;"><span style="font-size: 15px; font-weight: 600;">All servers</span><span style="font-size: 13px; color: #55656B;">Every container and alert in one view.</span></span>
+</li>
+<li style="display: flex; align-items: center; gap: 12px;">
+<span style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #E9EEEC; color: #15201E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14M5 12h14M5 18h9"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0;"><span style="font-size: 15px; font-weight: 600;">Log wall</span><span style="font-size: 13px; color: #55656B;">Live logs from several containers at once.</span></span>
+</li>
+<li style="display: flex; align-items: center; gap: 12px;">
+<span style="flex-shrink: 0; width: 36px; height: 36px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #E9EEEC; color: #15201E;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg></span>
+<span style="display: flex; flex-direction: column; gap: 1px; min-width: 0;"><span style="font-size: 15px; font-weight: 600;">Cross-server search</span><span style="font-size: 13px; color: #55656B;">Jump to anything on every server.</span></span>
+</li>
+</ul>
+<button type="button" style="height: 54px; border-radius: 16px; border: 0; background: {{accent}}; color: #FFFFFF; font-size: 16px; font-weight: 600;">Got it</button>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0B7A5C","options":["#0B7A5C","#1F5FBF","#8A5200"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#0B7A5C' };
+}
+}
+</script>
+</body>
+</html>

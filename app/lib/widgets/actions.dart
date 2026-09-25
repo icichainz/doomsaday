@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -49,6 +51,9 @@ Future<bool> runAction(
 
 /// Starts a long operation, shows its progress sheet and refreshes the screens
 /// it could have changed.
+///
+/// "Run in background" leaves the job running on the agent: this keeps
+/// following it, and refreshes and says how it ended once it does.
 Future<void> runJob(
   BuildContext context,
   WidgetRef ref,
@@ -59,9 +64,53 @@ Future<void> runJob(
     final AgentApi api = ref.read(agentApiProvider(serverId));
     final Job job = await start(api);
     if (!context.mounted) return;
-    await showJobSheet(context, job: job, events: api.jobEvents(job.id));
+    final JobSheetExit exit = await showJobSheet(
+      context,
+      job: job,
+      events: api.jobEvents(job.id),
+      serverName: ref.read(serverProvider(serverId)).name,
+      onCancel: api.canCancelJobs ? () => api.cancelJob(job.id) : null,
+    );
     refreshServer(ref);
+    if (exit == JobSheetExit.background && context.mounted) {
+      unawaited(
+        _followInBackground(ScaffoldMessenger.maybeOf(context), ref, api, job),
+      );
+    }
   } on AgentException catch (error) {
     if (context.mounted) notify(context, error.toString(), danger: true);
   }
+}
+
+Future<void> _followInBackground(
+  ScaffoldMessengerState? messenger,
+  WidgetRef ref,
+  AgentApi api,
+  Job job,
+) async {
+  Job last = job;
+  try {
+    await for (final Job update in api.jobEvents(job.id)) {
+      last = update;
+      if (update.status.isFinished) break;
+    }
+    if (!last.status.isFinished) last = await api.job(job.id);
+  } on AgentException {
+    return;
+  }
+  if (!last.status.isFinished) return;
+  try {
+    refreshServer(ref);
+  } on Object {
+    // The screen that started it is gone; the next visit reloads anyway.
+  }
+  final bool ok = last.status == JobStatus.succeeded;
+  if (messenger == null || !messenger.mounted) return;
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(
+        ok ? '${last.title}: done' : '${last.title}: ${last.error ?? 'failed'}',
+      ),
+    ),
+  );
 }

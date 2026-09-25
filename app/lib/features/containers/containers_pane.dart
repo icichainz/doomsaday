@@ -229,10 +229,20 @@ class _ListPane extends ConsumerWidget {
                     )
                     .toList(growable: false);
                 if (shown.isEmpty) {
-                  return const EmptyView(
-                    icon: Icons.search_off,
-                    title: 'No matching containers',
-                    message: 'Nothing here matches that filter.',
+                  return SingleChildScrollView(
+                    child: EmptyView(
+                      glyph: StrokeGlyph.search,
+                      title: 'No matching containers',
+                      message: 'Nothing here matches that search.',
+                      secondary: EmptyAction(
+                        'Clear filter',
+                        onPressed: () {
+                          filter.clear();
+                          onQuery();
+                          onState(ContainerFilter.all);
+                        },
+                      ),
+                    ),
                   );
                 }
                 return ListView.builder(
@@ -379,7 +389,7 @@ class _NothingSelected extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 380),
         child: const EmptyView(
-          icon: Icons.view_in_ar_outlined,
+          glyph: StrokeGlyph.containers,
           title: 'Pick a container',
           message:
               'Its logs, details, environment and shell open here, next to '

@@ -16,6 +16,7 @@ import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 import '../../widgets/surfaces.dart';
 import '../../widgets/table.dart';
 import 'resource_table.dart';
@@ -392,7 +393,7 @@ class _Images extends ConsumerWidget {
         loadingRowHeight: 46,
         isEmpty: (ImageList list) => list.images.isEmpty,
         empty: const EmptyView(
-          icon: Icons.inventory_2_outlined,
+          glyph: StrokeGlyph.resources,
           title: 'No images',
           message: 'Nothing has been pulled on this host yet.',
         ),
@@ -522,7 +523,7 @@ class _Images extends ConsumerWidget {
           loadingRowHeight: 64,
           isEmpty: (ImageList list) => list.images.isEmpty,
           empty: const EmptyView(
-            icon: Icons.inventory_2_outlined,
+            glyph: StrokeGlyph.resources,
             title: 'No images',
             message: 'Nothing has been pulled on this host yet.',
           ),

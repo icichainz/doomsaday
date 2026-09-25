@@ -14,6 +14,7 @@ import '../../theme/tokens.dart';
 import '../../widgets/desktop.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 import '../../widgets/table.dart';
 import 'fleet_providers.dart';
 
@@ -50,7 +51,8 @@ class FleetAlertsScreen extends ConsumerWidget {
           loadingRowHeight: 56,
           isEmpty: (FleetSnapshot s) => s.alerts.isEmpty && s.offline.isEmpty,
           empty: const EmptyView(
-            icon: Icons.check_circle_outline,
+            glyph: StrokeGlyph.checkCircle,
+            tone: EmptyTone.healthy,
             title: 'Nothing needs attention',
             message: 'No alert rule has fired on any paired server.',
           ),
@@ -66,7 +68,8 @@ class FleetAlertsScreen extends ConsumerWidget {
               children: <Widget>[
                 if (alerts.isEmpty)
                   const EmptyView(
-                    icon: Icons.check_circle_outline,
+                    glyph: StrokeGlyph.checkCircle,
+                    tone: EmptyTone.healthy,
                     title: 'Nothing needs attention',
                     message: 'No alert rule has fired on a reachable server.',
                   )

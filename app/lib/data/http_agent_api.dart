@@ -1067,6 +1067,16 @@ class HttpAgentApi implements AgentApi {
       Job.fromJson(_object(await _send('GET', '/jobs/${_seg(id)}')));
 
   @override
+  bool get canCancelJobs => false;
+
+  @override
+  Future<void> cancelJob(String id) async => throw const AgentException(
+    'not_supported',
+    'This agent cannot cancel a running job.',
+    status: 405,
+  );
+
+  @override
   Stream<Job> jobEvents(String id) async* {
     Job? current;
     try {

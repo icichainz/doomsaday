@@ -12,6 +12,7 @@ import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 
 /// Screen 15 — Registry credentials.
 class RegistriesScreen extends ConsumerWidget {
@@ -89,7 +90,7 @@ class RegistriesScreen extends ConsumerWidget {
           loadingRowHeight: 118,
           isEmpty: (List<RegistryInfo> list) => list.isEmpty,
           empty: const EmptyView(
-            icon: Icons.lock_outline,
+            glyph: StrokeGlyph.lock,
             title: 'No registries',
             message:
                 'This agent pulls anonymously. Add one to use private images.',

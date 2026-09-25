@@ -53,11 +53,13 @@ class OverviewScreen extends ConsumerWidget {
       orElse: () => 'Reading system info…',
     );
 
+    final bool desktop = WindowClass.of(context).usesDesktopExtras;
     final Widget statCards = AsyncSection<SystemStats>(
       value: stats,
       onRetry: () => ref.invalidate(systemStatsProvider(serverId)),
-      loadingRows: 2,
-      loadingRowHeight: 104,
+      // Board `LoadingError`: the four stat cards as dimmed bars, laid out
+      // the way the figures will be.
+      loading: LoadingView.statCards(columns: desktop ? 4 : 2),
       builder: (SystemStats s) => _StatCards(
         serverId: serverId,
         stats: s,
@@ -71,7 +73,87 @@ class OverviewScreen extends ConsumerWidget {
     );
     final Widget activity = _RecentActivity(serverId: serverId);
 
-    if (WindowClass.of(context).usesDesktopExtras) {
+    // Board `LoadingError`: an agent that cannot be reached is one error card
+    // with its reason, "Retry" and "Server settings", not one per section.
+    final Object? failure = stats.error ?? info.error;
+    final bool offline =
+        failure is AgentException && failure.isUnreachable && !stats.hasValue;
+    if (offline) {
+      final Widget pill = const StatusPill('Offline', tone: PillTone.danger);
+      final String host = Uri.tryParse(server.baseUrl)?.authority ?? '';
+      final Widget card = ErrorView(
+        error: failure,
+        onRetry: () async {
+          try {
+            await ref.read(serversRepositoryProvider).retry(serverId);
+          } on AgentException {
+            // Still down: the providers below fail again and say so.
+          }
+          ref
+            ..invalidate(systemProvider(serverId))
+            ..invalidate(alertsProvider(serverId));
+          refreshServer(ref);
+        },
+        onSettings: () => context.push('/s/$serverId/settings'),
+      );
+      if (desktop) {
+        return DesktopPage(
+          children: <Widget>[
+            DesktopHeader(
+              title: server.name,
+              pill: pill,
+              subtitle: host,
+              actions: <Widget>[_JumpBox(serverId: serverId)],
+            ),
+            Align(
+              alignment: Alignment.topLeft,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 560),
+                child: card,
+              ),
+            ),
+          ],
+        );
+      }
+      return ShellPage(
+        gap: 18,
+        children: <Widget>[
+          ScreenHeader(
+            title: server.name,
+            subtitleWidget: Row(
+              children: <Widget>[
+                pill,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    host,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.monoSmall.copyWith(color: t.mutedText),
+                  ),
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              DoomIconButton(
+                glyph: StrokeGlyph.settings,
+                semanticLabel: 'Server settings',
+                size: context.density.iconButton,
+                onPressed: () => context.push('/s/$serverId/settings'),
+              ),
+              DoomIconButton(
+                glyph: StrokeGlyph.alerts,
+                semanticLabel: 'Alerts',
+                size: context.density.iconButton,
+                onPressed: () => context.push('/s/$serverId/alerts'),
+              ),
+            ],
+          ),
+          card,
+        ],
+      );
+    }
+
+    if (desktop) {
       return DesktopPage(
         children: <Widget>[
           DesktopHeader(
@@ -308,7 +390,7 @@ class _BusiestContainers extends ConsumerWidget {
           loadingRowHeight: 44,
           isEmpty: (List<ContainerSummary> list) => list.isEmpty,
           empty: const EmptyView(
-            icon: Icons.view_in_ar_outlined,
+            glyph: StrokeGlyph.containers,
             title: 'No containers',
             message: 'Nothing is deployed on this host yet.',
           ),
@@ -419,7 +501,8 @@ class _NeedsAttention extends StatelessWidget {
             const SizedBox(height: 10),
             if (active.isEmpty)
               const EmptyView(
-                icon: Icons.check_circle_outline,
+                glyph: StrokeGlyph.checkCircle,
+                tone: EmptyTone.healthy,
                 title: 'Nothing needs attention',
                 message: 'No alert rule has fired on this server.',
               )

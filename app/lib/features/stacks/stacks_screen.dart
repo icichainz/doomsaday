@@ -15,6 +15,7 @@ import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 
 /// Screens 9 and 10 — Compose stacks and Swarm services behind one segmented
 /// control, as the design links them.
@@ -92,10 +93,14 @@ class _ComposeStacks extends ConsumerWidget {
       loadingRows: 3,
       loadingRowHeight: 140,
       isEmpty: (List<ComposeStack> list) => list.isEmpty,
-      empty: const EmptyView(
-        icon: Icons.layers_outlined,
-        title: 'No Compose stacks',
-        message: "Nothing was found under the agent's stacks directory.",
+      empty: EmptyView(
+        glyph: StrokeGlyph.stacks,
+        title: 'No Compose projects on this server',
+        message: 'Folders with a compose.yaml show up here.',
+        detail: ref
+            .watch(agentSettingsProvider(serverId))
+            .valueOrNull
+            ?.stacksDirectory,
       ),
       builder: (List<ComposeStack> list) => CardGrid(
         cards: <Widget>[
@@ -287,20 +292,17 @@ class _SwarmServices extends ConsumerWidget {
       loadingRowHeight: 140,
       isEmpty: (SwarmInfo s) => !s.active,
       empty: const EmptyView(
-        icon: Icons.hub_outlined,
+        glyph: StrokeGlyph.nodes,
         title: 'This host is not in a swarm',
-        message:
-            'Run docker swarm init on the host, or join it to an existing '
-            'cluster, and its services show up here.',
+        message: 'Services appear once the host joins a swarm.',
+        detail: 'docker swarm init',
       ),
       builder: (SwarmInfo info) => info.isManager
           ? _ServiceList(serverId: serverId)
           : const EmptyView(
-              icon: Icons.hub_outlined,
+              glyph: StrokeGlyph.nodes,
               title: 'This node is a worker',
-              message:
-                  'Only a Swarm manager can list or change services. Open the '
-                  'manager node to work with them.',
+              message: 'Only a manager node can list or change services.',
             ),
     );
   }
@@ -323,7 +325,7 @@ class _ServiceList extends ConsumerWidget {
       loadingRowHeight: 140,
       isEmpty: (List<SwarmService> list) => list.isEmpty,
       empty: const EmptyView(
-        icon: Icons.hub_outlined,
+        glyph: StrokeGlyph.nodes,
         title: 'No Swarm services',
         message: 'This manager runs no services yet.',
       ),

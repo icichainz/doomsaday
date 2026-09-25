@@ -62,6 +62,30 @@ enum StrokeGlyph {
 
   /// The `⌘` in the Cmd+K hint.
   command,
+
+  /// A magnifier: search fields and "nothing matches" empty states.
+  search,
+
+  /// A tick in a circle: "Nothing needs attention".
+  checkCircle,
+
+  /// A plain tick: a finished job.
+  check,
+
+  /// Three linked nodes: Swarm.
+  nodes,
+
+  /// An arrow into a tray: pulling an image, any running job.
+  download,
+
+  /// A warning triangle: errors and failed jobs.
+  warning,
+
+  /// Four equal squares: "All servers".
+  fleet,
+
+  /// An arrow out of a door: "Leave demo".
+  leave,
 }
 
 /// One design icon at [size] points, coloured from [IconTheme] by default.
@@ -264,7 +288,88 @@ class _StrokePainter extends CustomPainter {
     StrokeGlyph.info => _info(),
     StrokeGlyph.arrowRight => _arrowRight(),
     StrokeGlyph.command => _command(),
+    StrokeGlyph.search => _search(),
+    StrokeGlyph.checkCircle => _checkCircle(),
+    StrokeGlyph.check => _check(),
+    StrokeGlyph.nodes => _nodes(),
+    StrokeGlyph.download => _download(),
+    StrokeGlyph.warning => _warning(),
+    StrokeGlyph.fleet => _fleet(),
+    StrokeGlyph.leave => _leave(),
   };
+
+  // <circle 11 11 r7> M21 21l-4.3-4.3
+  static Path _search() => Path()
+    ..addOval(Rect.fromCircle(center: const Offset(11, 11), radius: 7))
+    ..moveTo(21, 21)
+    ..lineTo(16.7, 16.7);
+
+  // <circle 12 12 r9> M8 12.5l2.5 2.5L16 9.5
+  static Path _checkCircle() => Path()
+    ..addOval(Rect.fromCircle(center: const Offset(12, 12), radius: 9))
+    ..moveTo(8, 12.5)
+    ..lineTo(10.5, 15)
+    ..lineTo(16, 9.5);
+
+  // M5 12.5l4.5 4.5L19 7.5
+  static Path _check() => Path()
+    ..moveTo(5, 12.5)
+    ..lineTo(9.5, 17)
+    ..lineTo(19, 7.5);
+
+  // three r2.5 circles, M10.8 7.2L6.2 15.8 M13.2 7.2l4.6 8.6 M7.5 18h9
+  static Path _nodes() => Path()
+    ..addOval(Rect.fromCircle(center: const Offset(12, 5), radius: 2.5))
+    ..addOval(Rect.fromCircle(center: const Offset(5, 18), radius: 2.5))
+    ..addOval(Rect.fromCircle(center: const Offset(19, 18), radius: 2.5))
+    ..moveTo(10.8, 7.2)
+    ..lineTo(6.2, 15.8)
+    ..moveTo(13.2, 7.2)
+    ..lineTo(17.8, 15.8)
+    ..moveTo(7.5, 18)
+    ..lineTo(16.5, 18);
+
+  // M12 4v11 M7 10l5 5 5-5 M5 20h14
+  static Path _download() => Path()
+    ..moveTo(12, 4)
+    ..lineTo(12, 15)
+    ..moveTo(7, 10)
+    ..lineTo(12, 15)
+    ..lineTo(17, 10)
+    ..moveTo(5, 20)
+    ..lineTo(19, 20);
+
+  // M12 4l9 16H3z M12 10v4 M12 17.5h.01
+  static Path _warning() => Path()
+    ..moveTo(12, 4)
+    ..lineTo(21, 20)
+    ..lineTo(3, 20)
+    ..close()
+    ..moveTo(12, 10)
+    ..lineTo(12, 14)
+    ..moveTo(12, 17.5)
+    ..lineTo(12.01, 17.5);
+
+  // four <rect w8 h8 rx1.5>
+  static Path _fleet() => Path()
+    ..addRRect(_r(3, 3, 8, 8, 1.5))
+    ..addRRect(_r(13, 3, 8, 8, 1.5))
+    ..addRRect(_r(3, 13, 8, 8, 1.5))
+    ..addRRect(_r(13, 13, 8, 8, 1.5));
+
+  // M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3 M10 16l-4-4 4-4 M6 12h10
+  static Path _leave() => Path()
+    ..moveTo(15, 4)
+    ..lineTo(18, 4)
+    ..arcToPoint(const Offset(20, 6), radius: const Radius.circular(2))
+    ..lineTo(20, 18)
+    ..arcToPoint(const Offset(18, 20), radius: const Radius.circular(2))
+    ..lineTo(15, 20)
+    ..moveTo(10, 16)
+    ..lineTo(6, 12)
+    ..lineTo(10, 8)
+    ..moveTo(6, 12)
+    ..lineTo(16, 12);
 
   // <rect x y w h rx=1.5> ×4
   static Path _overview() => Path()
