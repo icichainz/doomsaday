@@ -135,7 +135,7 @@ abstract final class AppTheme {
       bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: t.surface,
         surfaceTintColor: Colors.transparent,
-        modalBarrierColor: const Color(0xB8040709),
+        modalBarrierColor: t.scrim,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),

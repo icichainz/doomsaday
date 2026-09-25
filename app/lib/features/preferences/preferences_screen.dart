@@ -98,7 +98,7 @@ Future<void> showPreferencesDialog(BuildContext context) => showDialog<void>(
   context: context,
   useRootNavigator: true,
   barrierDismissible: true,
-  barrierColor: const Color(0xB8040709),
+  barrierColor: context.tokens.scrim,
   builder: (BuildContext context) => const PreferencesDialog(),
 );
 

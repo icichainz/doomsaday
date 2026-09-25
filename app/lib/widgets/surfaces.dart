@@ -134,7 +134,7 @@ Future<T?> showAdaptiveModal<T>(
   return showDialog<T>(
     context: context,
     barrierDismissible: dismissible,
-    barrierColor: const Color(0xB8040709),
+    barrierColor: context.tokens.scrim,
     builder: (BuildContext context) =>
         AppDialogShell(width: width, child: builder(context, false)),
   );

@@ -32,6 +32,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.info,
     required this.proRed,
     required this.proInk,
+    required this.scrim,
   });
 
   final Color ground;
@@ -65,6 +66,9 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final Color proRed;
   final Color proInk;
 
+  /// What dims the page under a sheet, a dialog or the palette.
+  final Color scrim;
+
   static const AppTokens dark = AppTokens(
     ground: Color(0xFF0E1417),
     surface: Color(0xFF161E22),
@@ -92,6 +96,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     info: Color(0xFF6CB8FF),
     proRed: Color(0xFF9E1B1B),
     proInk: Color(0xFFFAF3E8),
+    scrim: Color(0xB8040709),
   );
 
   static const AppTokens light = AppTokens(
@@ -121,6 +126,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     info: Color(0xFF1F5FBF),
     proRed: Color(0xFF9E1B1B),
     proInk: Color(0xFFFAF3E8),
+    scrim: Color(0x7315201E),
   );
 
   @override

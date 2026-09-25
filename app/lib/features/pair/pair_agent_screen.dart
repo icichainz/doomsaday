@@ -221,7 +221,7 @@ class _PairAgentScreenState extends ConsumerState<PairAgentScreen> {
           CodeBlock(
             code: _installCommand,
             trailing: DoomIconButton(
-              icon: Icons.copy_all_outlined,
+              glyph: StrokeGlyph.copy,
               semanticLabel: 'Copy install command',
               size: 44,
               radius: 10,

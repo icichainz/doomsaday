@@ -102,7 +102,7 @@ Boards: `IconFree`, `IconProIvory` (the chosen Pro icon; `IconProDark` and `Icon
 | Icon mark | mint `#5BE3B0` | ivory `#FAF3E8` |
 | Same mark geometry | yes, `app/tool/generate_icon.py` | yes |
 
-**Pro red is for the icon, the PRO badge and the lock tile only.** The interface accent stays mint in both editions, and coral stays reserved for danger, so "Pro" never reads as "error".
+**Pro red is for the icon and brand tile (sidebar brand, app lock), the PRO badge, the lock tile and the Pro upgrade tile only.** The interface accent stays mint in both editions, and coral stays reserved for danger, so "Pro" never reads as "error".
 
 **PRO badge**: small rounded rectangle, radius 6, fill `#9E1B1B`, text `#FAF3E8`, 10.5 px, weight 600, letter-spacing 0.6, text "PRO". Same colours in the light theme.
 
@@ -147,3 +147,62 @@ Contents:
 | General | Demo data | Off, On (same as "Explore with demo data" and "Leave demo") |
 | Edition | Doomsaday Free with "n of 2 servers paired" and a "Get Pro" button; in Pro just "Doomsaday Pro" | |
 | About | Version and agent API version; open-source licences | |
+
+## Round 3: the screens and states that had no board
+
+Three rounds drew what the app already did but no board showed, then aligned the app to the boards. Every board below has a `Light` twin. Full detail per board (copy, states, measurements) is in `notes/phone-screens.md`, `notes/states-and-dialogs.md` and `notes/desktop-tablet.md`; this section is the summary and the rules the three now share.
+
+### Phone screens (390×844)
+
+| # | File | Screen | Reached from |
+|---|---|---|---|
+| 16 | Shell | Container shell, connected (key row, input row, session pill) | Container detail: Shell (admin, running) |
+| 17 | Devices | Paired devices | Server settings: Paired devices |
+| 18 | DeviceActions | Role and revoke sheet, last-admin rule drawn | Devices: a row's more button |
+| 19 | Activity | Activity log grouped by day, filter and chips | Server settings: Activity log |
+| 20 | PairConfirm | Certificate step as a sheet over Pair | Pair: "Test connection and pair" succeeded |
+| 21 | PairError | Pair with the red failure card and "Try again" | Pair: failed |
+| 22 | ContainerDetailEnv | Environment and volumes sheet | Container detail: Environment or Volumes |
+
+### States and dialogs
+
+| File | What it shows | Size |
+|---|---|---|
+| EmptyStates | The shared `EmptyView`, five examples (a tall sheet, not one screen) | 390×1400 |
+| LoadingError | Offline server: one `ErrorView`, and the skeleton loading state | 390×844 |
+| JobSheet / JobDone | Job progress sheet, running and finished | 390×844 |
+| DesktopJob | The job as a 500 px dialog over D4 | 1440×900 |
+| LockScreen / DesktopLock | App lock, Free build (mint tile) | 390×844 / 1440×900 |
+| LockScreenPro / DesktopLockPro | App lock, Pro build (deep-red tile, ivory "D") | 390×844 / 1440×900 |
+| ProUpgrade | "Doomsaday Pro is not on sale yet" sheet (460 px dialog from 600) | 390×844 |
+| MainDemo | Servers in demo mode, "Leave demo" | 390×844 |
+
+### Desktop (1440×900) and tablet (834×1194)
+
+| # | File | What it shows |
+|---|---|---|
+| D8 | DesktopStacks | Compose stacks, cards in 2 columns, segmented control for Swarm |
+| D9 | DesktopVolumes | Volumes table in D4's frame |
+| D10 | DesktopNetworks | Networks table in D4's frame, Default / In use / Unused |
+| D11 | DesktopAlerts | Alert cards in 2 columns, resolved notes, rules table below |
+| D12 | DesktopSettings | Server settings in a left-aligned 720 px column |
+| D13 | DesktopRegistries | Registry cards in 2 columns, "‹ Server settings" link |
+| D14 | DesktopPair | The 560 px pair dialog on step 2 of 2, the certificate |
+| D15 | DesktopPalette | Cmd+K hanging from the top, grouped results (Free: current server, "Search every server" row) |
+| T2 | TabletContainers | Containers at tablet width, filter and chips on one row, 52 px rows |
+| T3 | TabletStacks | Stacks at tablet width, "Pull and redeploy" on its own row |
+
+From 600 to 1099 every page uses T1's 28 px padding and 28 px title.
+
+### Rules the three rounds share
+
+- **State views.** Every screen uses the one set in `app/lib/widgets/state_views.dart`: `LoadingView` (skeleton bars in the real card chrome; no spinner anywhere except inside a busy button), `ErrorView` (one per screen, danger-border card, "Retry", "Server settings" where it helps), `EmptyView` (56 px tile, title, one line, optional mono hint, at most two buttons; the healthy tone for "Nothing needs attention").
+- **No-results copy.** A filter or search that leaves nothing reads "No matching <things>" / "Nothing here matches that search." (Containers, Servers, Images, Volumes, Networks, fleet containers, Activity), with "Clear filter" where there is state to reset. Logs keep their own line, which quotes the text.
+- **Filter field.** One widget (`FilterField`): 36 px, radius 10, 13 px text and the `/` hint with a pointer (D2, D4, D9, D10); 44 px, radius 12 on touch, with 14 px text, 12 px sides and a 16 px glyph on the phone (Logs, Activity) and 15 px text, 14 px sides and a 17 px glyph on the tablet (T2). No `/` hint on touch.
+- **Icons.** The stroke set (`StrokeIcon`) wherever a glyph exists, with the same paths as the boards: the nav glyphs, `cog`, `sun`, `lock`, `pulse`, `info`, `arrowRight`, `command`, `search`, `checkCircle`, `check`, `nodes`, `download`, `warning`, `fleet`, `leave`, `shield`, `shieldCheck`, `shieldX`, `close`, `chevronLeft`, `plus`, `copy`, `arrowUp`, `arrowDown`, `returnKey`. Material icons remain only where the set has none (play, stop, pause, trash, more, history, volumes, networks and a few others).
+- **Sheets and dialogs.** Below 600 a bottom sheet (radius 28 top, handle); from 600 a centred dialog: 500 px for confirms, prompts and job progress (D3, DesktopJob), 460 px for the Pro panels (P1, P2, ProUpgrade), 560 px for the pair dialog and the palette, 680×520 for Preferences.
+- **Scrim.** Under every sheet, dialog and the palette: `rgba(4, 7, 9, 0.72)` dark, `rgba(21, 32, 30, 0.45)` light (the `scrim` token).
+- **Card density.** From 600 up cards are radius 16, padding 16 × 18, title 16 px; card buttons are 36 px, radius 10, 13 px with a pointer and 44 px, radius 12, 14 px on touch.
+- **Pairing.** One certificate step on every width: "Trust this certificate?", the same sentence, the fingerprint exactly as the agent prints it (four lines of two colon groups, selectable), then Agent version, Your role, Device id. The phone shows it as a sheet (PairConfirm), from 600 as step 2 of the one pair dialog (DesktopPair). Failures use PairError's titles on every width. In demo mode "Pin and pair" adds a sample server.
+- **Device nouns.** "This phone" / "this Mac" follows the platform everywhere; counts say "devices" ("3 devices" on Server settings).
+- **Editions.** The brand tile follows the edition wherever it appears (sidebar, app lock): mint in Free, deep red with an ivory "D" in Pro.

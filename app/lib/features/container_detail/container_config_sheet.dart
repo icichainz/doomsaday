@@ -348,8 +348,8 @@ class _EnvRow extends StatelessWidget {
                     child: SizedBox(
                       width: 32,
                       height: 32,
-                      child: Icon(
-                        Icons.copy_all_outlined,
+                      child: StrokeIcon(
+                        StrokeGlyph.copy,
                         size: 16,
                         color: t.mutedText,
                       ),

@@ -105,6 +105,9 @@ enum StrokeGlyph {
   /// `+`: the create buttons.
   plus,
 
+  /// Two overlapping sheets: copy a value or a command.
+  copy,
+
   /// `↑` `↓` `↵` on the jump palette's keycaps (no bundled face has them).
   arrowUp,
   arrowDown,
@@ -342,6 +345,7 @@ class _StrokePainter extends CustomPainter {
     StrokeGlyph.close => _close(),
     StrokeGlyph.chevronLeft => _chevronLeft(),
     StrokeGlyph.plus => _plus(),
+    StrokeGlyph.copy => _copy(),
     StrokeGlyph.arrowUp => _arrowUp(),
     StrokeGlyph.arrowDown => _arrowDown(),
     StrokeGlyph.returnKey => _returnKey(),
@@ -472,6 +476,14 @@ class _StrokePainter extends CustomPainter {
     ..moveTo(15, 18)
     ..lineTo(9, 12)
     ..lineTo(15, 6);
+
+  // <rect x9 y9 w11 h11 rx2> M5 15V6a2 2 0 0 1 2-2h9
+  static Path _copy() => Path()
+    ..addRRect(_r(9, 9, 11, 11, 2))
+    ..moveTo(5, 15)
+    ..lineTo(5, 6)
+    ..arcToPoint(const Offset(7, 4), radius: const Radius.circular(2))
+    ..lineTo(16, 4);
 
   // M12 5v14 M5 12h14
   static Path _plus() => Path()

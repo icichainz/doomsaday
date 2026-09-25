@@ -37,18 +37,20 @@ Seven phone boards, 390×844, each with a `Light` twin made with the README's da
 ## Activity
 
 - Header "Activity log", subtitle "Who did what on prod-eu-1, and when".
-- Filter field "Filter by container, device or action" (matches the sentence, the device, the action and the target), then chips All, Denied, Errors, Mine (Mine = records carrying this device's id).
+- Filter field "Filter by container, device or action" (the shared 44 px touch field: 14 px text, 12 px sides, 16 px glyph, as on Logs) (matches the sentence, the device, the action and the target), then chips All, Denied, Errors, Mine (Mine = records carrying this device's id).
 - Records grouped by day, newest first. Headings: TODAY, YESTERDAY, then the weekday within the week, then `12 Sep` (plus the year when it is not this one).
 - Row: time `09:41` mono 12 muted in a 44 px column; the board sentence 14 px ("nginx-proxy restarted from this phone", "Stack monitoring brought down from On-call pixel"); under it "device · role" 12 muted and the result pill on the right: `ok` neutral, `denied` warning, `error` danger. The sentence no longer carries " · denied"; the pill does.
-- Empty log: "Nothing recorded yet". Nothing matching: "Nothing matches — Try another filter, or clear the text."
+- Empty log: "Nothing recorded yet". Nothing matching (integration: aligned to the EmptyStates board): "No matching activity — Nothing here matches that search." with an outline "Clear filter" that empties the text and resets the chip to All.
 - The list scrolls; the board clips it at 844.
 
 ## PairConfirm
 
-- Sheet over the Pair screen: accent-tint tile with a shield-check, "Check the certificate", mono host `agent.example.com:8443`.
-- Copy: "Compare with the fingerprint the agent printed on the host. If every group matches, pin it: from then on the app refuses this server if the certificate changes."
-- Fingerprint block: code-block fill, caption "SHA-256 FINGERPRINT", the 64 hex characters as eight 8-character groups in a 4×2 grid, Plex Mono 14/500. The agent prints the same bytes as `A4:E9:7C:10:…`; each group is four of those pairs without the colons.
-- Rows (44 px, bordered, radius 16): Agent version, Role for this phone (this Mac on a Mac), Device id.
+Integration: the certificate step now reads the same on every width as DesktopPair (title, sentence, fingerprint format, row labels); only the chrome differs (sheet, 48 px tile, 54 px buttons here).
+
+- Sheet over the Pair screen: accent-tint tile with a shield-check, "Trust this certificate?", mono host `agent.example.com:8443`.
+- Copy: "The agent answered, and the fingerprint it reported matches the certificate it presented. Compare it with what the agent printed on the host, then pin it. The app refuses the connection if it ever changes."
+- Fingerprint block: code-block fill, caption "SHA-256 FINGERPRINT", the bytes exactly as the agent prints them: four lines of eight bytes, each line two colon groups of four (`A4:E9:7C:10  3B:65:D2:8F`) 22 px apart, Plex Mono 14/500, selectable.
+- Rows (44 px, bordered, radius 16): Agent version, Your role, Device id.
 - Buttons: "Cancel" (outline) and "Pin and pair" (accent), 54 px, radius 16. Nothing is stored before "Pin and pair".
 
 ## PairError

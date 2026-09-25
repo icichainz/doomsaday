@@ -183,7 +183,7 @@ List<(JumpKind, List<JumpTarget>)> groupJumpTargets(
 Future<void> showJumpPalette(BuildContext context, {String? currentServerId}) =>
     showDialog<void>(
       context: context,
-      barrierColor: const Color(0xB8040709),
+      barrierColor: context.tokens.scrim,
       builder: (BuildContext context) {
         final Size window = MediaQuery.sizeOf(context);
         final double top = (window.height * 0.12).clamp(24.0, 110.0);

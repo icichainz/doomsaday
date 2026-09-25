@@ -201,7 +201,7 @@ class _Header extends StatelessWidget {
 Future<void> showProFeature(BuildContext context, ProFeature feature) =>
     showDialog<void>(
       context: context,
-      barrierColor: const Color(0xB8040709),
+      barrierColor: context.tokens.scrim,
       builder: (BuildContext context) => Center(
         child: Material(
           color: Colors.transparent,

@@ -49,7 +49,7 @@ Decision: **keep the 720 px column** (a two-column split reads no better: the co
 
 - Agent card (warning border when an update exists) with "Update agent" at 36 px.
 - Group: Agent URL, Certificate "Pinned · 9F:2C…A1:7E" (click copies the full fingerprint), Your role. Groups here have radius 16, 18 px sides, 44 px rows, faint dividers.
-- Group of links: Registry credentials "2 signed in", Alert rules "4 active", Paired devices "**3 devices**" (the phone keeps "phones"), Activity log.
+- Group of links: Registry credentials "2 signed in", Alert rules "4 active", Paired devices "**3 devices**" (integration: the phone ServerSettings board now says "3 devices" too), Activity log.
 - Switches (56 px rows): "Fingerprint before risky actions", "Read-only on **this Mac**" (the device noun follows the platform everywhere now).
 - Last, directly after the switches (not pinned to the window's bottom): a danger-bordered card "Unpair this server" / "Revokes this Mac's device key on the agent. Other paired devices keep working." with "Unpair…" (36 px, danger text), which opens the D3 confirm.
 
@@ -69,7 +69,7 @@ The 560 px pair dialog over "All servers" (dim 0.72). Pairing is now **one dialo
 - Code block "SHA-256 FINGERPRINT": 4 lines of 8 bytes, each line in **two groups of four** 22 px apart, mono 14/500, selectable.
 - Detail rows: Agent version, Your role, Device id (mono).
 - "‹ Back" (to the form, fields kept) at the left; "Cancel" and "Pin and pair" (accent), 40 px, at the right. Return pins, Esc cancels.
-- Below 600 the pushed screen and its bottom sheet are unchanged.
+- Below 600 the pushed screen and its bottom sheet (PairConfirm), which since integration carries the same title, sentence, fingerprint lines and rows as this step.
 
 ## D15 DesktopPalette
 

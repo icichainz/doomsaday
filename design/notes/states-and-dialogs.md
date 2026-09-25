@@ -64,7 +64,7 @@ Every screen gets these through `AsyncSection` or the widgets themselves (`Loadi
 Nothing of the app is built behind it; the ground colour is all there is.
 
 - In the centre: the 72 px brand tile (radius 20, "D" in Bricolage 40), then "Unlock Doomsaday" (Bricolage 24), then one line: "Your servers stay out of sight until you unlock."
-- The brand tile is accent with a dark "D" in Free. In Pro it is the deep-red tile with an ivory "D", as P3 draws the Pro brand.
+- The brand tile follows the edition. `LockScreen` and `DesktopLock` draw Free's accent tile with a dark "D"; `LockScreenPro` and `DesktopLockPro` (added at integration, each with a `Light` twin) draw the Pro build's deep-red `#9E1B1B` tile with an ivory `#FAF3E8` "D", as P3 draws the Pro brand. Each build's capture pairs against its own boards.
 - One accent button: "Unlock with fingerprint or face" on a phone (full width, 56 px, radius 18) and "Unlock with Touch ID" on a Mac or iPhone (320 px, 44 px, radius 12 on desktop).
 - Refusal: if the prompt is cancelled or fails, the line becomes **"That did not unlock. Try again."** in danger colour, and the button stays.
 
@@ -90,4 +90,4 @@ This is what "Get Doomsaday Pro" and "Get Pro" open in the Free build today. It 
 
 ## Glyphs added to the stroke set
 
-`search`, `checkCircle`, `check`, `nodes` (Swarm), `download`, `warning`, `fleet` (four equal squares), `leave`. Each glyph uses the same path in the boards and in `app/lib/widgets/stroke_icons.dart`.
+`search`, `checkCircle`, `check`, `nodes` (Swarm), `download`, `warning`, `fleet` (four equal squares), `leave`. Each glyph uses the same path in the boards and in `app/lib/widgets/stroke_icons.dart`. At integration `check` became the existing boards' tick (`M5 12l5 5 9-10`, as on Alerts and ProLocked), and the JobDone boards draw that path.
