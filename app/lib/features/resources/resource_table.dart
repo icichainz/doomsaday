@@ -7,6 +7,7 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../../theme/tokens.dart';
 import '../../widgets/context_menu.dart';
 import '../../widgets/desktop.dart';
 import '../../widgets/filter_field.dart';
@@ -122,8 +123,12 @@ class _ResourceTableState<T> extends State<ResourceTable<T>> {
             footer: widget.footer == null
                 ? null
                 : Text(
-                    '${rows.length} of ${widget.rows.length} · ${widget.footer}',
-                    style: const TextStyle(fontSize: 12.5),
+                    'Showing ${rows.length} of ${widget.rows.length} · '
+                    '${widget.footer}',
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: context.tokens.mutedText,
+                    ),
                   ),
           ),
       ],

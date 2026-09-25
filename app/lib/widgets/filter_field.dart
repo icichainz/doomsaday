@@ -82,30 +82,38 @@ class _FilterFieldState extends ConsumerState<FilterField> {
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
     final Density d = context.density;
+    // With a pointer it is D2/D4's 36 px box; on a touch screen (the tablet
+    // containers list) the same box at 44 px with 15 px text.
+    final bool touch = !d.compact;
+    final double fontSize = touch ? 15 : 13;
     final Widget box = Container(
-      height: d.field,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      height: touch ? 44 : d.field,
+      padding: EdgeInsets.symmetric(horizontal: touch ? 14 : 10),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(touch ? 12 : 10),
         border: Border.all(color: t.border),
       ),
       child: Row(
         children: <Widget>[
-          Icon(Icons.search, size: 15, color: t.mutedText),
-          const SizedBox(width: 8),
+          StrokeIcon(
+            StrokeGlyph.search,
+            size: touch ? 17 : 15,
+            color: t.mutedText,
+          ),
+          SizedBox(width: touch ? 10 : 8),
           Expanded(
             child: TextField(
               controller: widget.controller,
               focusNode: _focus,
               autofocus: widget.autofocus,
               onChanged: widget.onChanged,
-              style: TextStyle(color: t.text, fontSize: 13),
+              style: TextStyle(color: t.text, fontSize: fontSize),
               decoration: InputDecoration(
                 isDense: true,
                 border: InputBorder.none,
                 hintText: widget.hint,
-                hintStyle: TextStyle(color: t.mutedText, fontSize: 13),
+                hintStyle: TextStyle(color: t.mutedText, fontSize: fontSize),
               ),
             ),
           ),

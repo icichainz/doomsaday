@@ -62,6 +62,32 @@ enum StrokeGlyph {
 
   /// The `⌘` in the Cmd+K hint.
   command,
+
+  /// A warning triangle: alert cards and needs-attention rows.
+  warning,
+
+  /// A tick: a resolved alert.
+  check,
+
+  /// A shield: the pair dialog's certificate step.
+  shield,
+
+  /// A magnifier: the jump palette's field.
+  search,
+
+  /// An `×`: closing a dialog.
+  close,
+
+  /// `‹`: a back link.
+  chevronLeft,
+
+  /// `+`: the create buttons.
+  plus,
+
+  /// `↑` `↓` `↵` on the jump palette's keycaps (no bundled face has them).
+  arrowUp,
+  arrowDown,
+  returnKey,
 }
 
 /// One design icon at [size] points, coloured from [IconTheme] by default.
@@ -264,7 +290,100 @@ class _StrokePainter extends CustomPainter {
     StrokeGlyph.info => _info(),
     StrokeGlyph.arrowRight => _arrowRight(),
     StrokeGlyph.command => _command(),
+    StrokeGlyph.warning => _warning(),
+    StrokeGlyph.check => _check(),
+    StrokeGlyph.shield => _shield(),
+    StrokeGlyph.search => _search(),
+    StrokeGlyph.close => _close(),
+    StrokeGlyph.chevronLeft => _chevronLeft(),
+    StrokeGlyph.plus => _plus(),
+    StrokeGlyph.arrowUp => _arrowUp(),
+    StrokeGlyph.arrowDown => _arrowDown(),
+    StrokeGlyph.returnKey => _returnKey(),
   };
+
+  // M12 19V5 M6 11l6-6 6 6
+  static Path _arrowUp() => Path()
+    ..moveTo(12, 19)
+    ..lineTo(12, 5)
+    ..moveTo(6, 11)
+    ..lineTo(12, 5)
+    ..lineTo(18, 11);
+
+  // M12 5v14 M6 13l6 6 6-6
+  static Path _arrowDown() => Path()
+    ..moveTo(12, 5)
+    ..lineTo(12, 19)
+    ..moveTo(6, 13)
+    ..lineTo(12, 19)
+    ..lineTo(18, 13);
+
+  // M9 10l-4 4 4 4 M5 14h11a3 3 0 0 0 3-3V5
+  static Path _returnKey() => Path()
+    ..moveTo(9, 10)
+    ..lineTo(5, 14)
+    ..lineTo(9, 18)
+    ..moveTo(5, 14)
+    ..lineTo(16, 14)
+    ..arcToPoint(
+      const Offset(19, 11),
+      radius: const Radius.circular(3),
+      clockwise: false,
+    )
+    ..lineTo(19, 5);
+
+  // M12 4l9 16H3z  M12 10v4  M12 17.5h.01
+  static Path _warning() => Path()
+    ..moveTo(12, 4)
+    ..lineTo(21, 20)
+    ..lineTo(3, 20)
+    ..close()
+    ..moveTo(12, 10)
+    ..lineTo(12, 14)
+    ..moveTo(12, 17.5)
+    ..lineTo(12.01, 17.5);
+
+  // M5 12l5 5 9-10
+  static Path _check() => Path()
+    ..moveTo(5, 12)
+    ..lineTo(10, 17)
+    ..lineTo(19, 7);
+
+  // M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z
+  static Path _shield() => Path()
+    ..moveTo(12, 3)
+    ..lineTo(20, 6)
+    ..lineTo(20, 12)
+    ..cubicTo(20, 16.5, 16.8, 20, 12, 21)
+    ..cubicTo(7.2, 20, 4, 16.5, 4, 12)
+    ..lineTo(4, 6)
+    ..close();
+
+  // <circle cx=11 cy=11 r=7> M21 21l-4.3-4.3
+  static Path _search() => Path()
+    ..addOval(Rect.fromCircle(center: const Offset(11, 11), radius: 7))
+    ..moveTo(21, 21)
+    ..lineTo(16.7, 16.7);
+
+  // M6 6l12 12 M18 6L6 18
+  static Path _close() => Path()
+    ..moveTo(6, 6)
+    ..lineTo(18, 18)
+    ..moveTo(18, 6)
+    ..lineTo(6, 18);
+
+  // M15 18l-6-6 6-6
+  static Path _chevronLeft() => Path()
+    ..moveTo(15, 18)
+    ..lineTo(9, 12)
+    ..lineTo(15, 6);
+
+  // M12 5v14 M5 12h14
+  static Path _plus() => Path()
+    ..moveTo(12, 5)
+    ..lineTo(12, 19)
+    ..moveTo(5, 12)
+    ..lineTo(19, 12);
 
   // <rect x y w h rx=1.5> ×4
   static Path _overview() => Path()

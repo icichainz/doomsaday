@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/state_colors.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/filter_field.dart';
 import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
@@ -49,51 +50,79 @@ class _ContainersScreenState extends ConsumerState<ContainersScreen> {
       containersProvider(serverId),
     );
     final String query = _search.text.trim().toLowerCase();
+    // TabletContainers: the filter field is always there, on one row with
+    // the chips, instead of behind the phone's search button; rows are 52.
+    final bool tablet = WindowClass.of(context).isMedium;
+    final Widget chips = Semantics(
+      label: 'Filter by state',
+      container: true,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (final ContainerFilter filter
+              in ContainerFilter.values) ...<Widget>[
+            if (filter != ContainerFilter.all) const SizedBox(width: 8),
+            FilterChipButton(
+              label: '${filter.label} ${_count(all, filter)}',
+              selected: _filter == filter,
+              onPressed: () => setState(() => _filter = filter),
+            ),
+          ],
+        ],
+      ),
+    );
 
     return ShellPage(
       children: <Widget>[
         ScreenHeader(
           title: 'Containers',
-          subtitle: serverId,
+          subtitle: tablet
+              ? all.maybeWhen(
+                  data: (List<ContainerSummary> list) =>
+                      '${list.length} on $serverId',
+                  orElse: () => serverId,
+                )
+              : serverId,
           actions: <Widget>[
-            DoomIconButton(
-              icon: _searching ? Icons.close : Icons.search,
-              semanticLabel: _searching ? 'Close search' : 'Search containers',
-              onPressed: () => setState(() {
-                _searching = !_searching;
-                if (!_searching) _search.clear();
-              }),
-            ),
+            if (!tablet)
+              DoomIconButton(
+                icon: _searching ? Icons.close : Icons.search,
+                semanticLabel: _searching
+                    ? 'Close search'
+                    : 'Search containers',
+                onPressed: () => setState(() {
+                  _searching = !_searching;
+                  if (!_searching) _search.clear();
+                }),
+              ),
           ],
         ),
-        if (_searching)
-          LabelledField(
-            label: 'Search containers',
-            hint: 'Name or image',
-            controller: _search,
-            autofocus: true,
-          ),
-        // Scrolls sideways so long counts never clip the third chip.
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Semantics(
-            label: 'Filter by state',
-            container: true,
-            child: Row(
-              children: <Widget>[
-                for (final ContainerFilter filter
-                    in ContainerFilter.values) ...<Widget>[
-                  if (filter != ContainerFilter.all) const SizedBox(width: 8),
-                  FilterChipButton(
-                    label: '${filter.label} ${_count(all, filter)}',
-                    selected: _filter == filter,
-                    onPressed: () => setState(() => _filter = filter),
-                  ),
-                ],
-              ],
+        if (tablet)
+          Row(
+            children: <Widget>[
+              Expanded(
+                child: FilterField(
+                  controller: _search,
+                  hint: 'Filter by name or image',
+                  showHintKey: false,
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              const SizedBox(width: 10),
+              chips,
+            ],
+          )
+        else ...<Widget>[
+          if (_searching)
+            LabelledField(
+              label: 'Search containers',
+              hint: 'Name or image',
+              controller: _search,
+              autofocus: true,
             ),
-          ),
-        ),
+          // Scrolls sideways so long counts never clip the third chip.
+          SingleChildScrollView(scrollDirection: Axis.horizontal, child: chips),
+        ],
         AsyncSection<List<ContainerSummary>>(
           value: all,
           onRetry: () => ref.invalidate(containersProvider(serverId)),
@@ -127,6 +156,8 @@ class _ContainersScreenState extends ConsumerState<ContainersScreen> {
             }
             return RowGroup(
               trailingPadding: 6,
+              radius: tablet ? 18 : null,
+              dividerColor: tablet ? context.tokens.faintDivider : null,
               children: <Widget>[
                 for (final ContainerSummary c in shown)
                   _ContainerRow(serverId: serverId, container: c),
@@ -166,8 +197,10 @@ class _ContainerRow extends ConsumerWidget {
     final Color color = containerStateColor(t, container.state);
     final bool running = container.state.isRunning;
     final bool canOperate = ref.watch(roleProvider(serverId)).canOperate;
+    final bool tablet = WindowClass.of(context).isMedium;
+    final double height = tablet ? ShellMetrics.tabletRow : 66;
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 66),
+      constraints: BoxConstraints(minHeight: height),
       child: Row(
         children: <Widget>[
           Expanded(
@@ -175,12 +208,12 @@ class _ContainerRow extends ConsumerWidget {
               onTap: () =>
                   context.push('/s/$serverId/containers/${container.id}'),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(minHeight: 66),
+                constraints: BoxConstraints(minHeight: height),
                 child: Row(
                   children: <Widget>[
                     Container(
-                      width: 10,
-                      height: 10,
+                      width: tablet ? 8 : 10,
+                      height: tablet ? 8 : 10,
                       decoration: BoxDecoration(
                         color: color,
                         shape: BoxShape.circle,
@@ -194,9 +227,12 @@ class _ContainerRow extends ConsumerWidget {
                         children: <Widget>[
                           Text(
                             container.name,
-                            style: AppText.rowTitle.copyWith(color: t.text),
+                            style: AppText.rowTitle.copyWith(
+                              color: t.text,
+                              fontSize: tablet ? 14.5 : null,
+                            ),
                           ),
-                          const SizedBox(height: 3),
+                          SizedBox(height: tablet ? 1 : 3),
                           Text(
                             container.image,
                             maxLines: 1,
@@ -217,7 +253,7 @@ class _ContainerRow extends ConsumerWidget {
                           container.stateLabel,
                           style: AppText.pill.copyWith(color: color),
                         ),
-                        const SizedBox(height: 3),
+                        SizedBox(height: tablet ? 1 : 3),
                         Text(
                           container.meta,
                           style: AppText.tiny.copyWith(color: t.mutedText),

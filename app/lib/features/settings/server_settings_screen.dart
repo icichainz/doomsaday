@@ -5,10 +5,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../data/models.dart';
 import '../../data/providers.dart';
+import '../../data/this_device.dart';
+import '../../layout/layout.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/actions.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/desktop.dart';
 import '../../widgets/notify.dart';
 import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
@@ -82,7 +85,7 @@ class ServerSettingsScreen extends ConsumerWidget {
       () => ref
           .read(agentApiProvider(serverId))
           .updateDevice(server.deviceId, role: ServerRole.viewer),
-      success: 'This phone is read-only on ${server.name}',
+      success: '${thisDeviceLabel()} is read-only on ${server.name}',
     );
     if (!ok) return;
     ref.invalidate(meProvider(serverId));
@@ -116,150 +119,221 @@ class ServerSettingsScreen extends ConsumerWidget {
         : server.certFingerprint;
     final int? phones = identity?.pairedDevices ?? devices.valueOrNull?.length;
 
+    // DesktopSettings keeps the readable 720 px column, left-aligned under
+    // the page header like every other desktop page, with tighter 44 px
+    // rows, the 36 px buttons, and "Unpair" as a card of its own right after
+    // the switches rather than pinned to the bottom of the window.
+    final bool desktop = WindowClass.of(context).usesDesktopExtras;
+    final double? rowRadius = desktop ? 16 : null;
+    final double rowPadding = desktop ? 18 : 16;
+    final Color? divider = desktop ? t.faintDivider : null;
+    final double detailHeight = desktop ? 44 : 46;
+    final String device = thisDeviceLabel(capitalized: false);
+
+    final Widget agent = AsyncSection<AgentUpdate>(
+      value: update,
+      onRetry: () => ref.invalidate(agentUpdateProvider(serverId)),
+      loadingRows: 1,
+      loadingRowHeight: 74,
+      builder: (AgentUpdate u) => DoomCard(
+        radius: desktop ? 16 : AppShape.card,
+        padding: EdgeInsets.symmetric(
+          horizontal: desktop ? 18 : 16,
+          vertical: 14,
+        ),
+        borderColor: u.available ? t.warningBorder : t.border,
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    'Agent ${u.current}',
+                    style: AppText.rowTitle.copyWith(color: t.text),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    u.available
+                        ? 'Version ${u.latest} is available'
+                        : (u.configured
+                              ? 'Up to date'
+                              : 'No update channel is configured'),
+                    style: AppText.small.copyWith(
+                      color: u.available ? t.warning : t.mutedText,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            if (u.available && role.canUpdateAgent)
+              DoomButton(
+                'Update agent',
+                tone: ButtonTone.primary,
+                height: context.density.cardButton,
+                radius: context.density.cardButtonRadius,
+                onPressed: () => runJob(
+                  context,
+                  ref,
+                  serverId,
+                  (api) => api.startAgentUpdate(),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+    final Widget identityGroup = RowGroup(
+      radius: rowRadius,
+      horizontalPadding: rowPadding,
+      dividerColor: divider,
+      children: <Widget>[
+        // Long hosts and fingerprints lose their middle rather than
+        // wrapping onto a second line.
+        DetailRow(
+          'Agent URL',
+          server.host,
+          mono: true,
+          middleEllipsis: true,
+          minHeight: detailHeight,
+        ),
+        _FingerprintRow(fingerprint: fingerprint, minHeight: detailHeight),
+        DetailRow('Your role', role.label, minHeight: detailHeight),
+      ],
+    );
+    final Widget links = RowGroup(
+      radius: rowRadius,
+      horizontalPadding: rowPadding,
+      dividerColor: divider,
+      children: <Widget>[
+        NavRow(
+          label: 'Registry credentials',
+          minHeight: desktop ? 44 : 50,
+          value: registries.maybeWhen(
+            data: (List<RegistryInfo> list) =>
+                '${list.where((RegistryInfo r) => r.hasCredential).length} signed in',
+            orElse: () => '…',
+          ),
+          onTap: () => context.push('/s/$serverId/settings/registries'),
+        ),
+        NavRow(
+          label: 'Alert rules',
+          minHeight: desktop ? 44 : 50,
+          value: rules.maybeWhen(
+            data: (List<AlertRule> list) =>
+                '${list.where((AlertRule r) => r.enabled).length} active',
+            orElse: () => '…',
+          ),
+          onTap: () => context.push('/s/$serverId/alerts'),
+        ),
+        NavRow(
+          label: 'Paired devices',
+          minHeight: desktop ? 44 : 50,
+          // The phone board counts phones; a Mac is one of the devices.
+          value: phones == null
+              ? '…'
+              : desktop
+              ? '$phones device${phones == 1 ? '' : 's'}'
+              : '$phones phone${phones == 1 ? '' : 's'}',
+          onTap: () => context.push('/s/$serverId/settings/devices'),
+        ),
+        NavRow(
+          label: 'Activity log',
+          minHeight: desktop ? 44 : 50,
+          value: 'Who did what, and when',
+          onTap: () => context.push('/s/$serverId/settings/activity'),
+        ),
+      ],
+    );
+    final Widget switches = AsyncSection<AgentSettings>(
+      value: settings,
+      onRetry: () => ref.invalidate(agentSettingsProvider(serverId)),
+      loadingRows: 2,
+      loadingRowHeight: 60,
+      builder: (AgentSettings s) => RowGroup(
+        radius: rowRadius,
+        horizontalPadding: rowPadding,
+        dividerColor: divider,
+        children: <Widget>[
+          SwitchRow(
+            label: 'Fingerprint before risky actions',
+            description: 'Stop, remove, prune and stack down',
+            minHeight: desktop ? 56 : null,
+            value: s.requireBiometricForRisky,
+            onChanged: role.canEditSettings
+                ? (bool value) async {
+                    final bool ok = await runAction(
+                      context,
+                      ref,
+                      () => ref
+                          .read(agentApiProvider(serverId))
+                          .updateSettings(requireBiometricForRisky: value),
+                    );
+                    if (ok) {
+                      ref.invalidate(agentSettingsProvider(serverId));
+                    }
+                  }
+                : null,
+          ),
+          SwitchRow(
+            label: 'Read-only on $device',
+            description: role == ServerRole.viewer
+                ? 'On. Another admin has to change it back.'
+                : 'Sets this device to the viewer role on the agent',
+            minHeight: desktop ? 56 : null,
+            value: role == ServerRole.viewer,
+            // Turning it off is the agent's business, not this device's.
+            onChanged: role.canManageDevices
+                ? (bool value) =>
+                      value ? _setReadOnly(context, ref, server) : null
+                : null,
+          ),
+        ],
+      ),
+    );
+
+    if (desktop) {
+      return DesktopPage(
+        children: <Widget>[
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: SizedBox(
+              width: ShellMetrics.readableWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  DesktopHeader(
+                    title: 'Server settings',
+                    subtitle: server.name,
+                  ),
+                  const SizedBox(height: 20),
+                  for (final Widget section in <Widget>[
+                    agent,
+                    identityGroup,
+                    links,
+                    switches,
+                    _UnpairCard(onUnpair: () => _unpair(context, ref)),
+                  ]) ...<Widget>[section, const SizedBox(height: 14)],
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return PushedPage(
       gap: 14,
       fillLast: true,
       children: <Widget>[
         const BackLink('Overview'),
         ScreenHeader(title: 'Server settings', subtitle: server.name),
-        AsyncSection<AgentUpdate>(
-          value: update,
-          onRetry: () => ref.invalidate(agentUpdateProvider(serverId)),
-          loadingRows: 1,
-          loadingRowHeight: 74,
-          builder: (AgentUpdate u) => DoomCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            borderColor: u.available ? t.warningBorder : t.border,
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        'Agent ${u.current}',
-                        style: AppText.rowTitle.copyWith(color: t.text),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        u.available
-                            ? 'Version ${u.latest} is available'
-                            : (u.configured
-                                  ? 'Up to date'
-                                  : 'No update channel is configured'),
-                        style: AppText.small.copyWith(
-                          color: u.available ? t.warning : t.mutedText,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                if (u.available && role.canUpdateAgent)
-                  DoomButton(
-                    'Update agent',
-                    tone: ButtonTone.primary,
-                    onPressed: () => runJob(
-                      context,
-                      ref,
-                      serverId,
-                      (api) => api.startAgentUpdate(),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        RowGroup(
-          children: <Widget>[
-            // Long hosts and fingerprints lose their middle rather than
-            // wrapping onto a second line.
-            DetailRow(
-              'Agent URL',
-              server.host,
-              mono: true,
-              middleEllipsis: true,
-            ),
-            _FingerprintRow(fingerprint: fingerprint),
-            DetailRow('Your role', role.label),
-          ],
-        ),
-        RowGroup(
-          children: <Widget>[
-            NavRow(
-              label: 'Registry credentials',
-              value: registries.maybeWhen(
-                data: (List<RegistryInfo> list) =>
-                    '${list.where((RegistryInfo r) => r.hasCredential).length} signed in',
-                orElse: () => '…',
-              ),
-              onTap: () => context.push('/s/$serverId/settings/registries'),
-            ),
-            NavRow(
-              label: 'Alert rules',
-              value: rules.maybeWhen(
-                data: (List<AlertRule> list) =>
-                    '${list.where((AlertRule r) => r.enabled).length} active',
-                orElse: () => '…',
-              ),
-              onTap: () => context.push('/s/$serverId/alerts'),
-            ),
-            NavRow(
-              label: 'Paired devices',
-              value: phones == null
-                  ? '…'
-                  : '$phones phone${phones == 1 ? '' : 's'}',
-              onTap: () => context.push('/s/$serverId/settings/devices'),
-            ),
-            NavRow(
-              label: 'Activity log',
-              value: 'Who did what, and when',
-              onTap: () => context.push('/s/$serverId/settings/activity'),
-            ),
-          ],
-        ),
-        AsyncSection<AgentSettings>(
-          value: settings,
-          onRetry: () => ref.invalidate(agentSettingsProvider(serverId)),
-          loadingRows: 2,
-          loadingRowHeight: 60,
-          builder: (AgentSettings s) => RowGroup(
-            children: <Widget>[
-              SwitchRow(
-                label: 'Fingerprint before risky actions',
-                description: 'Stop, remove, prune and stack down',
-                value: s.requireBiometricForRisky,
-                onChanged: role.canEditSettings
-                    ? (bool value) async {
-                        final bool ok = await runAction(
-                          context,
-                          ref,
-                          () => ref
-                              .read(agentApiProvider(serverId))
-                              .updateSettings(requireBiometricForRisky: value),
-                        );
-                        if (ok) {
-                          ref.invalidate(agentSettingsProvider(serverId));
-                        }
-                      }
-                    : null,
-              ),
-              SwitchRow(
-                label: 'Read-only on this phone',
-                description: role == ServerRole.viewer
-                    ? 'On. Another admin has to change it back.'
-                    : 'Sets this device to the viewer role on the agent',
-                value: role == ServerRole.viewer,
-                // Turning it off is the agent's business, not this phone's.
-                onChanged: role.canManageDevices
-                    ? (bool value) =>
-                          value ? _setReadOnly(context, ref, server) : null
-                    : null,
-              ),
-            ],
-          ),
-        ),
+        agent,
+        identityGroup,
+        links,
+        switches,
         DoomButton(
           'Unpair this server',
           tone: ButtonTone.danger,
@@ -273,11 +347,65 @@ class ServerSettingsScreen extends ConsumerWidget {
   }
 }
 
+/// DesktopSettings' last card: what unpairing does, and the button.
+class _UnpairCard extends StatelessWidget {
+  const _UnpairCard({required this.onUnpair});
+
+  final VoidCallback onUnpair;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    return DoomCard(
+      radius: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      borderColor: t.dangerBorder,
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Text(
+                  'Unpair this server',
+                  style: AppText.label.copyWith(
+                    color: t.text,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  "Revokes ${thisDeviceLabel(capitalized: false)}'s device key "
+                  'on the agent. Other paired devices keep working.',
+                  style: AppText.small.copyWith(
+                    color: t.mutedText,
+                    fontSize: 12.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          DoomButton(
+            'Unpair…',
+            height: context.density.cardButton,
+            radius: context.density.cardButtonRadius,
+            tone: ButtonTone.danger,
+            onPressed: onUnpair,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// The pinned fingerprint, shortened for the row and copyable in full.
 class _FingerprintRow extends StatelessWidget {
-  const _FingerprintRow({required this.fingerprint});
+  const _FingerprintRow({required this.fingerprint, this.minHeight = 46});
 
   final String fingerprint;
+  final double minHeight;
 
   static String shorten(String value) {
     final List<String> parts = value.split(':');
@@ -297,6 +425,7 @@ class _FingerprintRow extends StatelessWidget {
         'Pinned · ${shorten(fingerprint)}',
         mono: true,
         middleEllipsis: true,
+        minHeight: minHeight,
       ),
     );
   }

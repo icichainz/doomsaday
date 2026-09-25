@@ -48,10 +48,11 @@ Future<void> _openPalette(WidgetTester t) async {
   await t.sendKeyEvent(LogicalKeyboardKey.keyK);
   await t.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
   await settle(t);
-  // The board shows the palette with a query typed and the second row picked.
-  await t.enterText(find.byType(EditableText).last, 'api');
-  await settle(t);
-  await t.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+  // The board shows nothing typed and api-gateway picked: three servers,
+  // then nginx-proxy, then api-gateway.
+  for (int i = 0; i < 4; i++) {
+    await t.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+  }
   await settle(t);
 }
 
@@ -92,10 +93,13 @@ void main() {
     _both('DesktopPair', (WidgetTester t) async {
       await go(t, '/');
       await tap(t, find.text('Pair a server').first);
+      // The dialog's three fields are the last three on screen; the fleet's
+      // filter underneath is the first.
       final Finder fields = find.byType(EditableText);
-      await t.enterText(fields.at(0), 'edge-1');
-      await t.enterText(fields.at(1), 'https://edge-1.example.com:8443');
-      await t.enterText(fields.at(2), 'pt_7Hq2xWm9');
+      final int n = fields.evaluate().length;
+      await t.enterText(fields.at(n - 3), 'edge-1');
+      await t.enterText(fields.at(n - 2), 'https://edge-1.example.com:8443');
+      await t.enterText(fields.at(n - 1), 'pt_7Hq2xWm9');
       await settle(t);
       await tap(t, find.text('Test connection and pair').last);
       await settle(t, frames: 6);

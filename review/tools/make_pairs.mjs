@@ -59,7 +59,24 @@ const BOTH = [
   'DesktopLogWall',
   'DesktopPreferences',
 ];
-const ONLY = { free: ['ProLocked', 'ProLimit'], pro: ['ProBrand'] };
+/** The desktop-tablet round: drawn against Pro, the palette also on Free. */
+const DESKTOP_TABLET = [
+  'DesktopStacks',
+  'DesktopVolumes',
+  'DesktopNetworks',
+  'DesktopAlerts',
+  'DesktopSettings',
+  'DesktopRegistries',
+  'DesktopPair',
+  'DesktopPalette',
+  'TabletContainers',
+  'TabletStacks',
+];
+const DESKTOP_TABLET_PRO = DESKTOP_TABLET.flatMap((b) => [b, `${b}Light`]);
+const ONLY = {
+  free: ['ProLocked', 'ProLimit', 'DesktopPalette'],
+  pro: ['ProBrand', ...DESKTOP_TABLET_PRO],
+};
 
 /** ProBrand pairs against the sidebar brand alone, so the app shot is cropped. */
 const CROP = { ProBrand: { x: 0, y: 0, w: 264, h: 150 } };

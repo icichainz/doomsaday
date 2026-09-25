@@ -279,6 +279,8 @@ class RowGroup extends StatelessWidget {
     required this.children,
     this.horizontalPadding = 16,
     this.trailingPadding,
+    this.radius,
+    this.dividerColor,
   });
 
   final List<Widget> children;
@@ -286,6 +288,13 @@ class RowGroup extends StatelessWidget {
 
   /// Lists whose last cell is a 44px icon button inset the right edge.
   final double? trailingPadding;
+
+  /// The card's corner, 20 unless a board draws it tighter (the desktop
+  /// settings column and the tablet list use 16 and 18).
+  final double? radius;
+
+  /// The line between rows; the desktop boards draw it fainter.
+  final Color? dividerColor;
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +306,9 @@ class RowGroup extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: t.surface,
-        borderRadius: AppShape.cardRadius,
+        borderRadius: radius == null
+            ? AppShape.cardRadius
+            : BorderRadius.circular(radius!),
         border: Border.all(color: t.border),
       ),
       child: Column(
@@ -307,7 +318,9 @@ class RowGroup extends StatelessWidget {
               decoration: BoxDecoration(
                 border: i == children.length - 1
                     ? null
-                    : Border(bottom: BorderSide(color: t.border)),
+                    : Border(
+                        bottom: BorderSide(color: dividerColor ?? t.border),
+                      ),
               ),
               child: children[i],
             ),
@@ -511,11 +524,15 @@ class DetailRow extends StatelessWidget {
     super.key,
     this.mono = false,
     this.middleEllipsis = false,
+    this.minHeight = 46,
   });
 
   final String label;
   final String value;
   final bool mono;
+
+  /// 46 on the phone, 44 in the desktop settings column.
+  final double minHeight;
 
   /// Long hosts and fingerprints lose their middle, not their tail.
   final bool middleEllipsis;
@@ -527,7 +544,7 @@ class DetailRow extends StatelessWidget {
         ? AppText.mono.copyWith(color: t.text)
         : AppText.label.copyWith(color: t.text);
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 46),
+      constraints: BoxConstraints(minHeight: minHeight),
       // `spaceBetween` with exactly two children is what pins the label to
       // the left and the value to the right edge whatever either is worth,
       // while both stay flexible so neither can overflow the row. The flex
@@ -639,6 +656,7 @@ class SwitchRow extends StatelessWidget {
     this.description,
     required this.value,
     required this.onChanged,
+    this.minHeight,
   });
 
   final String label;
@@ -646,11 +664,16 @@ class SwitchRow extends StatelessWidget {
   final bool value;
   final ValueChanged<bool>? onChanged;
 
+  /// Defaults to 46, or 60 with a description.
+  final double? minHeight;
+
   @override
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
     return ConstrainedBox(
-      constraints: BoxConstraints(minHeight: description == null ? 46 : 60),
+      constraints: BoxConstraints(
+        minHeight: minHeight ?? (description == null ? 46 : 60),
+      ),
       child: Row(
         children: <Widget>[
           Expanded(
@@ -670,16 +693,42 @@ class SwitchRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Switch.adaptive(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: t.accent,
-            activeThumbColor: t.onAccent,
-            inactiveTrackColor: t.iconButtonFill,
-            inactiveThumbColor: t.mutedText,
-            trackOutlineColor: WidgetStatePropertyAll<Color>(t.outlineBorder),
-          ),
+          DoomSwitch(value: value, onChanged: onChanged, label: label),
         ],
+      ),
+    );
+  }
+}
+
+/// The design's switch, on its own for the cells of a table (the alert
+/// rules on the desktop).
+class DoomSwitch extends StatelessWidget {
+  const DoomSwitch({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.label,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
+  /// What the switch turns on, for a switch with no text beside it.
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    return Semantics(
+      label: label,
+      child: Switch.adaptive(
+        value: value,
+        onChanged: onChanged,
+        activeTrackColor: t.accent,
+        activeThumbColor: t.onAccent,
+        inactiveTrackColor: t.iconButtonFill,
+        inactiveThumbColor: t.mutedText,
+        trackOutlineColor: WidgetStatePropertyAll<Color>(t.outlineBorder),
       ),
     );
   }
@@ -758,11 +807,17 @@ class ScreenHeader extends StatelessWidget {
                       title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      // T1 draws the tablet titles at the desktop's 28.
                       style:
                           (large
                                   ? AppText.screenTitleLarge
                                   : AppText.screenTitle)
-                              .copyWith(color: t.text),
+                              .copyWith(
+                                color: t.text,
+                                fontSize: WindowClass.of(context).isMedium
+                                    ? 28
+                                    : null,
+                              ),
                     ),
                   ),
                   if (pill != null) ...<Widget>[
