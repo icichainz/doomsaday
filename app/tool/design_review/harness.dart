@@ -201,7 +201,8 @@ Future<void> teardown(WidgetTester tester) async {
 Future<void> shoot(WidgetTester tester, String name) async {
   await tester.runAsync(() async {
     final RenderRepaintBoundary boundary =
-        reviewRootKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+        reviewRootKey.currentContext!.findRenderObject()!
+            as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage();
     final ByteData? png = await image.toByteData(
       format: ui.ImageByteFormat.png,

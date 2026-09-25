@@ -425,7 +425,7 @@ class _PairButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Icon(Icons.add, size: 16, color: t.text),
+              StrokeIcon(StrokeGlyph.plus, size: 16, color: t.text),
               const SizedBox(width: 8),
               Flexible(
                 child: Text(

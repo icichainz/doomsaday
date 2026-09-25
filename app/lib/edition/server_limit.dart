@@ -10,6 +10,7 @@ import '../theme/tokens.dart';
 import '../widgets/buttons.dart';
 import '../widgets/surfaces.dart';
 import 'pro_badge.dart';
+import '../widgets/stroke_icons.dart';
 
 /// The sheet below 600, a centred dialog from 600 up.
 Future<void> showServerLimit(
@@ -54,7 +55,7 @@ class ServerLimitBody extends StatelessWidget {
                 color: t.proRed,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(Icons.lock_outline, size: 22, color: t.proInk),
+              child: StrokeIcon(StrokeGlyph.lock, size: 22, color: t.proInk),
             ),
             const SizedBox(width: 14),
             Expanded(

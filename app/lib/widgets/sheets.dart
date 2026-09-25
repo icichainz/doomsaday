@@ -16,14 +16,16 @@ import 'surfaces.dart';
 
 class _Heading extends StatelessWidget {
   const _Heading({
-    required this.icon,
+    this.icon,
+    this.glyph,
     required this.title,
     required this.subtitle,
     this.danger = true,
     this.compact = false,
   });
 
-  final IconData icon;
+  final IconData? icon;
+  final StrokeGlyph? glyph;
   final String title;
   final String subtitle;
   final bool danger;
@@ -44,7 +46,13 @@ class _Heading extends StatelessWidget {
             color: danger ? t.dangerTint : t.accentTint,
             borderRadius: BorderRadius.circular(compact ? 14 : 16),
           ),
-          child: Icon(icon, size: 22, color: danger ? t.danger : t.accent),
+          child: glyph != null
+              ? StrokeIcon(
+                  glyph!,
+                  size: 22,
+                  color: danger ? t.danger : t.accent,
+                )
+              : Icon(icon, size: 22, color: danger ? t.danger : t.accent),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -446,7 +454,8 @@ Future<String?> showPromptSheet(
   required String label,
   required String hint,
   required String confirmLabel,
-  required IconData icon,
+  IconData? icon,
+  StrokeGlyph? glyph,
   bool mono = true,
   bool obscure = false,
 }) {
@@ -459,6 +468,7 @@ Future<String?> showPromptSheet(
       hint: hint,
       confirmLabel: confirmLabel,
       icon: icon,
+      glyph: glyph,
       mono: mono,
       obscure: obscure,
       sheet: sheet,
@@ -474,6 +484,7 @@ class _PromptBody extends StatefulWidget {
     required this.hint,
     required this.confirmLabel,
     required this.icon,
+    required this.glyph,
     required this.mono,
     required this.obscure,
     required this.sheet,
@@ -484,7 +495,8 @@ class _PromptBody extends StatefulWidget {
   final String label;
   final String hint;
   final String confirmLabel;
-  final IconData icon;
+  final IconData? icon;
+  final StrokeGlyph? glyph;
   final bool mono;
   final bool obscure;
   final bool sheet;
@@ -521,6 +533,7 @@ class _PromptBodyState extends State<_PromptBody> {
         children: <Widget>[
           _Heading(
             icon: widget.icon,
+            glyph: widget.glyph,
             title: widget.title,
             subtitle: widget.subtitle,
             danger: false,

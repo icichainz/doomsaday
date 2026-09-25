@@ -103,7 +103,7 @@ class _LogWallScreenState extends ConsumerState<LogWallScreen> {
             ),
             DoomButton(
               'Add pane',
-              icon: Icons.add,
+              glyph: StrokeGlyph.plus,
               height: 36,
               radius: 10,
               tone: ButtonTone.primary,
@@ -126,7 +126,7 @@ class _LogWallScreenState extends ConsumerState<LogWallScreen> {
                       'any paired server and watch their logs side by side.',
                   primary: EmptyAction(
                     'Add pane',
-                    icon: Icons.add,
+                    glyph: StrokeGlyph.plus,
                     onPressed: _addPane,
                   ),
                 ),
@@ -349,7 +349,7 @@ class _LogPaneState extends ConsumerState<LogPane> {
                   onPressed: _togglePause,
                 ),
                 DoomIconButton(
-                  icon: Icons.close,
+                  glyph: StrokeGlyph.close,
                   semanticLabel: 'Close ${widget.pane.name}',
                   size: 30,
                   radius: 10,

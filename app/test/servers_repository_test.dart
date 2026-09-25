@@ -286,5 +286,40 @@ void main() {
       await repo.leaveDemoMode();
       expect(repo.servers, hasLength(3));
     });
+
+    test(
+      '"Pin and pair" adds a sample server instead of writing a store',
+      () async {
+        final ServersRepository repo = ServersRepository();
+        final PairPreview preview = await repo.beginPairing(
+          name: 'edge-1',
+          agentUrl: 'https://edge-1.example.com:8443',
+          token: 'pt_demo',
+        );
+        // The same two steps the Pair screen takes: preview, then confirm.
+        final PairResult result = await repo.completePairing(preview);
+
+        expect(result.server.id, 'edge-1');
+        expect(result.certFingerprint, preview.fingerprint);
+        expect(repo.servers.map((Server s) => s.id), contains('edge-1'));
+        expect(repo.servers, hasLength(4));
+        expect(repo.isDemo, isTrue);
+        // It answers like any other sample server.
+        expect(await repo.api('edge-1').health(), isTrue);
+
+        // Confirming the same preview twice is a conflict, not a duplicate.
+        await expectLater(
+          repo.completePairing(preview),
+          throwsA(
+            isA<AgentException>().having(
+              (AgentException e) => e.code,
+              'code',
+              'conflict',
+            ),
+          ),
+        );
+        expect(repo.servers, hasLength(4));
+      },
+    );
   });
 }

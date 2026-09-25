@@ -31,7 +31,7 @@ class RegistriesScreen extends ConsumerWidget {
       label: 'Registry host',
       hint: 'ghcr.io',
       confirmLabel: 'Next',
-      icon: Icons.lock_outline,
+      glyph: StrokeGlyph.lock,
     );
     if (host == null || !context.mounted) return;
     final String? username = await showPromptSheet(
@@ -78,7 +78,7 @@ class RegistriesScreen extends ConsumerWidget {
         .canManageRegistries;
 
     const Widget note = InfoNote(
-      icon: Icons.lock_outline,
+      glyph: StrokeGlyph.lock,
       text:
           'Passwords and tokens are sent once over HTTPS and stored '
           'encrypted on the agent. The app only ever reads back the '
@@ -101,7 +101,7 @@ class RegistriesScreen extends ConsumerWidget {
               if (canManage)
                 DoomButton(
                   'Add a registry',
-                  icon: Icons.add,
+                  glyph: StrokeGlyph.plus,
                   tone: ButtonTone.primary,
                   height: 36,
                   radius: 10,
@@ -116,7 +116,7 @@ class RegistriesScreen extends ConsumerWidget {
             loadingRowHeight: 118,
             isEmpty: (List<RegistryInfo> list) => list.isEmpty,
             empty: const EmptyView(
-              icon: Icons.lock_outline,
+              glyph: StrokeGlyph.lock,
               title: 'No registries',
               message:
                   'This agent pulls anonymously. Add one to use private '
@@ -172,7 +172,7 @@ class RegistriesScreen extends ConsumerWidget {
         if (canManage)
           DoomButton(
             'Add a registry',
-            icon: Icons.add,
+            glyph: StrokeGlyph.plus,
             tone: ButtonTone.primary,
             height: 56,
             radius: 18,

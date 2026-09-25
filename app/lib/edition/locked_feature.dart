@@ -16,6 +16,7 @@ import '../theme/app_theme.dart';
 import '../theme/tokens.dart';
 import '../widgets/buttons.dart';
 import 'pro_badge.dart';
+import '../widgets/stroke_icons.dart';
 
 /// The shape of the dimmed placeholder drawn behind the panel.
 enum ProSkeleton { panes, table }
@@ -245,7 +246,11 @@ class ProPanel extends StatelessWidget {
                     color: t.proRed,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(Icons.lock_outline, size: 20, color: t.proInk),
+                  child: StrokeIcon(
+                    StrokeGlyph.lock,
+                    size: 20,
+                    color: t.proInk,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -283,7 +288,11 @@ class ProPanel extends StatelessWidget {
                   children: <Widget>[
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Icon(Icons.check, size: 16, color: t.accent),
+                      child: StrokeIcon(
+                        StrokeGlyph.check,
+                        size: 16,
+                        color: t.accent,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(

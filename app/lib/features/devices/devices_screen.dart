@@ -13,6 +13,7 @@ import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/surfaces.dart';
+import '../../widgets/stroke_icons.dart';
 
 /// What each role may do, in the words the role sheet uses.
 String roleSummary(ServerRole role) => switch (role) {
@@ -186,7 +187,7 @@ class DevicesScreen extends ConsumerWidget {
           ),
         ),
         const InfoNote(
-          icon: Icons.shield_outlined,
+          glyph: StrokeGlyph.shield,
           text:
               'The first device to pair is admin and every later one is an '
               "operator. The last admin can't be demoted or revoked, so the "
@@ -513,7 +514,7 @@ class LastAdminNote extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(Icons.warning_amber_rounded, size: 20, color: t.warning),
+          StrokeIcon(StrokeGlyph.warning, size: 20, color: t.warning),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

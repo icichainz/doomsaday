@@ -271,10 +271,10 @@ class ServersRepository {
     required String token,
     String deviceName = 'This phone',
   }) async {
+    _refuseWhenFull();
     if (_store == null) {
       return _demoPairing(name: name, agentUrl: agentUrl, token: token);
     }
-    _refuseWhenFull();
 
     final String trimmedUrl = agentUrl.trim().replaceAll(RegExp(r'/+$'), '');
     if (trimmedUrl.isEmpty) {
@@ -372,8 +372,14 @@ class ServersRepository {
   }
 
   /// Stores the server and its device key, and pins the fingerprint.
+  ///
+  /// With no store (demo mode, or the paired mocks the tests use) there is
+  /// nothing to write: the server joins the list answered by a
+  /// [MockAgentApi], as "Pin and pair" promised.
   Future<PairResult> completePairing(PairPreview preview) async {
     _refuseWhenFull();
+    final ServerStore? store = _store;
+    if (store == null) return _completeMockPairing(preview);
     if (preview.deviceKey.isEmpty) {
       throw const AgentException(
         'pairing_failed',
@@ -382,7 +388,7 @@ class ServersRepository {
       );
     }
     try {
-      await _store!.writeDeviceKey(preview.server.id, preview.deviceKey);
+      await store.writeDeviceKey(preview.server.id, preview.deviceKey);
     } on SecureStorageUnavailable catch (error) {
       throw AgentException(
         'secure_storage_unavailable',
@@ -449,6 +455,34 @@ class ServersRepository {
     );
   }
 
+  /// The storeless half of [completePairing]: a sample world under the name
+  /// and address that were typed, with the fingerprint that was shown.
+  PairResult _completeMockPairing(PairPreview preview) {
+    if (_servers.containsKey(preview.server.id)) {
+      throw const AgentException(
+        'conflict',
+        'A server with that name is already paired.',
+        status: 409,
+      );
+    }
+    final MockWorld world = seedPaired(
+      id: preview.server.id,
+      name: preview.server.name,
+      baseUrl: preview.server.baseUrl,
+    );
+    _servers[world.server.id] = world.server;
+    _apis[world.server.id] = MockAgentApi(world);
+    _order.add(world.server.id);
+    return PairResult(
+      deviceKey: preview.deviceKey,
+      deviceId: preview.deviceId,
+      role: preview.role,
+      certFingerprint: preview.fingerprint,
+      agentVersion: preview.agentVersion,
+      server: world.server,
+    );
+  }
+
   /// Demo mode: pairing and confirming in one step, which the unit tests use.
   Future<PairResult> pair({
     required String name,
@@ -462,24 +496,6 @@ class ServersRepository {
       token: token,
       deviceName: deviceName,
     );
-    if (_store == null) {
-      final MockWorld world = seedPaired(
-        id: preview.server.id,
-        name: preview.server.name,
-        baseUrl: preview.server.baseUrl,
-      );
-      _servers[world.server.id] = world.server;
-      _apis[world.server.id] = MockAgentApi(world);
-      _order.add(world.server.id);
-      return PairResult(
-        deviceKey: preview.deviceKey,
-        deviceId: preview.deviceId,
-        role: preview.role,
-        certFingerprint: preview.fingerprint,
-        agentVersion: preview.agentVersion,
-        server: world.server,
-      );
-    }
     return completePairing(preview);
   }
 

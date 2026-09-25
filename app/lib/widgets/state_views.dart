@@ -225,11 +225,17 @@ class _SkeletonLine extends StatelessWidget {
 
 /// A button on an empty state. At most two per state.
 class EmptyAction {
-  const EmptyAction(this.label, {required this.onPressed, this.icon});
+  const EmptyAction(
+    this.label, {
+    required this.onPressed,
+    this.icon,
+    this.glyph,
+  });
 
   final String label;
   final VoidCallback onPressed;
   final IconData? icon;
+  final StrokeGlyph? glyph;
 }
 
 /// Neutral for "there is nothing", healthy for "there is nothing wrong".
@@ -328,6 +334,7 @@ class EmptyView extends StatelessWidget {
             DoomButton(
               primary!.label,
               icon: primary!.icon,
+              glyph: primary!.glyph,
               tone: ButtonTone.primary,
               expand: true,
               height: 52,
@@ -339,6 +346,7 @@ class EmptyView extends StatelessWidget {
               DoomButton(
                 secondary!.label,
                 icon: secondary!.icon,
+                glyph: secondary!.glyph,
                 expand: true,
                 height: 48,
                 radius: 16,
@@ -350,6 +358,7 @@ class EmptyView extends StatelessWidget {
             DoomButton(
               secondary!.label,
               icon: secondary!.icon,
+              glyph: secondary!.glyph,
               onPressed: secondary!.onPressed,
             ),
           ],

@@ -18,6 +18,7 @@ import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/surfaces.dart';
+import '../../widgets/stroke_icons.dart';
 
 /// Screen 14 — Server settings: everything about **one agent**.
 ///
@@ -39,10 +40,10 @@ class ServerSettingsScreen extends ConsumerWidget {
         title: 'Unpair ${server.name}?',
         subtitle: 'Revokes this device key',
         explanation:
-            "This phone's device key is revoked on the agent and the server "
-            'disappears from your list. Other paired phones keep working. If '
-            'this is the last admin phone the agent refuses, so promote '
-            'another one first.',
+            "${thisDeviceLabel()}'s device key is revoked on the agent and the "
+            'server disappears from your list. Other paired devices keep '
+            'working. If this is the last admin device the agent refuses, so '
+            'promote another one first.',
         requestLine: 'DELETE /v1/devices/${server.deviceId}',
         confirmLabel: 'Unpair server',
         icon: Icons.link_off,
@@ -231,12 +232,10 @@ class ServerSettingsScreen extends ConsumerWidget {
         NavRow(
           label: 'Paired devices',
           minHeight: desktop ? 44 : 50,
-          // The phone board counts phones; a Mac is one of the devices.
+          // Devices, not phones: a Mac or a tablet holds a key too.
           value: phones == null
               ? '…'
-              : desktop
-              ? '$phones device${phones == 1 ? '' : 's'}'
-              : '$phones phone${phones == 1 ? '' : 's'}',
+              : '$phones device${phones == 1 ? '' : 's'}',
           onTap: () => context.push('/s/$serverId/settings/devices'),
         ),
         NavRow(
@@ -447,7 +446,7 @@ class _ReadOnlyExplainer extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              'Make this phone read-only?',
+              'Make ${thisDeviceLabel(capitalized: false)} read-only?',
               style: AppText.sheetTitle.copyWith(color: t.text),
             ),
             const SizedBox(height: 8),
@@ -458,11 +457,13 @@ class _ReadOnlyExplainer extends StatelessWidget {
               style: AppText.body.copyWith(color: t.mutedText, height: 1.5),
             ),
             const SizedBox(height: 14),
-            const InfoNote(
-              icon: Icons.warning_amber_rounded,
+            InfoNote(
+              glyph: StrokeGlyph.warning,
               text:
-                  'You cannot undo this from this phone. Another admin device '
-                  'has to set the role back with PATCH /v1/devices/{id}.',
+                  'You cannot undo this from '
+                  '${thisDeviceLabel(capitalized: false)}. Another admin '
+                  'device has to set the role back with PATCH '
+                  '/v1/devices/{id}.',
             ),
             const SizedBox(height: 14),
             const CodeBlock(

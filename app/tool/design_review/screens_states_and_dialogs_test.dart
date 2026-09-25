@@ -130,6 +130,12 @@ void main() {
       themeMode: ThemeMode.light,
     );
     board('JobDone', kPhone, (WidgetTester t) => _openJob(t, _pulled()));
+    board(
+      'JobDoneLight',
+      kPhone,
+      (WidgetTester t) => _openJob(t, _pulled()),
+      themeMode: ThemeMode.light,
+    );
     desktopBoard('DesktopJob', (WidgetTester t) => _openJob(t, _pulling()));
     desktopBoard(
       'DesktopJobLight',
@@ -139,17 +145,20 @@ void main() {
   });
 
   group('app lock', () {
+    // The brand tile follows the edition: LockScreen/DesktopLock draw Free's
+    // mint tile, LockScreenPro/DesktopLockPro the Pro build's deep red.
+    final String pro = currentEdition.isPro ? 'Pro' : '';
     for (final ThemeMode mode in <ThemeMode>[ThemeMode.dark, ThemeMode.light]) {
       final String light = mode == ThemeMode.light ? 'Light' : '';
       board(
-        'LockScreen$light',
+        'LockScreen$pro$light',
         kPhone,
         (WidgetTester t) async {},
         themeMode: mode,
         preferences: const Preferences(appLock: true),
       );
       desktopBoard(
-        'DesktopLock$light',
+        'DesktopLock$pro$light',
         (WidgetTester t) async {},
         themeMode: mode,
         preferences: const Preferences(appLock: true),

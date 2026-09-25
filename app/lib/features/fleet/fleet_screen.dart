@@ -90,7 +90,7 @@ class _FleetScreenState extends ConsumerState<FleetScreen> {
             message: 'Pair an agent, or look around with sample data.',
             primary: EmptyAction(
               'Pair a new server',
-              icon: Icons.add,
+              glyph: StrokeGlyph.plus,
               onPressed: () => showPairAgent(context, ref),
             ),
             secondary: EmptyAction(
@@ -198,8 +198,8 @@ class _FleetScreenState extends ConsumerState<FleetScreen> {
         if (rows.isEmpty)
           const EmptyView(
             glyph: StrokeGlyph.search,
-            title: 'No containers',
-            message: 'Nothing on the online agents matches this filter.',
+            title: 'No matching containers',
+            message: 'Nothing on the online agents matches that search.',
           )
         else
           DataTableView<FleetContainer>(

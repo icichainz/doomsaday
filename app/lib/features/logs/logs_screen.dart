@@ -15,6 +15,7 @@ import '../../widgets/notify.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/state_views.dart';
 import '../containers/containers_pane.dart';
+import '../../widgets/stroke_icons.dart';
 
 /// Screen 8 — Live logs, with Pause and a line filter.
 ///
@@ -63,7 +64,7 @@ class LogsScreen extends ConsumerWidget {
             header: (BuildContext context, bool paused) => Row(
               children: <Widget>[
                 DoomIconButton(
-                  icon: Icons.chevron_left,
+                  glyph: StrokeGlyph.chevronLeft,
                   semanticLabel: 'Back to $name',
                   size: 44,
                   radius: 12,
@@ -292,7 +293,7 @@ class _LogsViewState extends ConsumerState<LogsView> {
             onPressed: () => setState(() => _paused = !_paused),
           );
     final Widget download = DoomIconButton(
-      icon: Icons.download,
+      glyph: StrokeGlyph.download,
       semanticLabel: 'Download logs',
       size: desktop ? 36 : 48,
       radius: desktop ? 10 : 14,
@@ -430,8 +431,8 @@ class _LogsViewState extends ConsumerState<LogsView> {
     if (_error != null) return ErrorView(error: _error!, onRetry: _load);
     if (shown.isEmpty) {
       return EmptyView(
-        icon: Icons.filter_alt_off_outlined,
-        title: query.isEmpty ? 'No log lines yet' : 'No lines match',
+        glyph: StrokeGlyph.search,
+        title: query.isEmpty ? 'No log lines yet' : 'No matching lines',
         message: query.isEmpty
             ? 'This container has not written anything since the agent started following it.'
             : 'Nothing in the buffered lines contains "$query".',

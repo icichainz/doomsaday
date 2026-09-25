@@ -301,7 +301,7 @@ class _JumpBox extends StatelessWidget {
             ),
             child: Row(
               children: <Widget>[
-                Icon(Icons.search, size: 15, color: t.mutedText),
+                StrokeIcon(StrokeGlyph.search, size: 15, color: t.mutedText),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -540,8 +540,8 @@ class _AttentionRow extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 40),
         child: Row(
           children: <Widget>[
-            Icon(
-              Icons.warning_amber_rounded,
+            StrokeIcon(
+              StrokeGlyph.warning,
               size: 20,
               color: critical ? t.danger : t.warning,
             ),

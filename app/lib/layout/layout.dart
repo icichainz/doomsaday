@@ -91,7 +91,7 @@ class Density {
     button: 48,
     iconButton: 48,
     chip: 44,
-    field: 48,
+    field: 44,
     segment: 44,
     inlineLink: 44,
     gutter: 20,

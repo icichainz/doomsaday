@@ -90,6 +90,12 @@ enum StrokeGlyph {
   /// A shield: the pair dialog's certificate step.
   shield,
 
+  /// A shield with a tick: the phone's certificate sheet (PairConfirm).
+  shieldCheck,
+
+  /// A shield with a cross: the pair error card (PairError).
+  shieldX,
+
   /// An `×`: closing a dialog.
   close,
 
@@ -124,10 +130,18 @@ class StrokeIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color paint =
         color ?? IconTheme.of(context).color ?? const Color(0xFFE8EEF0);
-    final Widget icon = CustomPaint(
-      size: Size.square(size),
-      painter: _StrokePainter(glyph: glyph, color: paint),
-      isComplex: false,
+    // Laid out like [Icon]: a [size] box that, when a parent forces it
+    // bigger (a fixed tile without alignment), keeps the glyph centred at
+    // [size] rather than stretching it.
+    final Widget icon = SizedBox.square(
+      dimension: size,
+      child: Center(
+        child: CustomPaint(
+          size: Size.square(size),
+          painter: _StrokePainter(glyph: glyph, color: paint),
+          isComplex: false,
+        ),
+      ),
     );
     if (semanticLabel == null) return icon;
     return Semantics(label: semanticLabel, child: icon);
@@ -314,6 +328,17 @@ class _StrokePainter extends CustomPainter {
     StrokeGlyph.fleet => _fleet(),
     StrokeGlyph.leave => _leave(),
     StrokeGlyph.shield => _shield(),
+    StrokeGlyph.shieldCheck =>
+      _shield()
+        ..moveTo(9, 12)
+        ..lineTo(11, 14)
+        ..lineTo(15, 10),
+    StrokeGlyph.shieldX =>
+      _shield()
+        ..moveTo(9.5, 9.5)
+        ..lineTo(14.5, 14.5)
+        ..moveTo(14.5, 9.5)
+        ..lineTo(9.5, 14.5),
     StrokeGlyph.close => _close(),
     StrokeGlyph.chevronLeft => _chevronLeft(),
     StrokeGlyph.plus => _plus(),
@@ -356,7 +381,6 @@ class _StrokePainter extends CustomPainter {
     ..lineTo(17, 10)
     ..moveTo(5, 20)
     ..lineTo(19, 20);
-
 
   // M12 19V5 M6 11l6-6 6 6
   static Path _arrowUp() => Path()

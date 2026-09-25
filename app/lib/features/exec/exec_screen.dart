@@ -13,6 +13,7 @@ import '../../widgets/buttons.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/state_views.dart';
 import '../containers/containers_pane.dart';
+import '../../widgets/stroke_icons.dart';
 
 /// Screen with the interactive shell. At 1100 and up the same route is the
 /// containers split view with the Shell tab open, which reuses [ExecView].
@@ -288,7 +289,7 @@ class _ExecViewState extends ConsumerState<ExecView> {
         const SizedBox(height: 12),
         Row(
           children: <Widget>[
-            Icon(Icons.shield_outlined, size: 14, color: t.mutedText),
+            StrokeIcon(StrokeGlyph.shield, size: 14, color: t.mutedText),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -340,7 +341,7 @@ class _ExecViewState extends ConsumerState<ExecView> {
               const SizedBox(width: 8),
               DoomButton(
                 'Send',
-                icon: Icons.keyboard_return,
+                glyph: StrokeGlyph.returnKey,
                 tone: ButtonTone.primary,
                 height: rowHeight,
                 radius: 12,
@@ -430,13 +431,13 @@ class _KeyRow extends StatelessWidget {
                         border: Border.all(color: t.border),
                       ),
                       child: switch (key) {
-                        TerminalKey.up => Icon(
-                          Icons.arrow_upward,
+                        TerminalKey.up => StrokeIcon(
+                          StrokeGlyph.arrowUp,
                           size: 18,
                           color: t.text,
                         ),
-                        TerminalKey.down => Icon(
-                          Icons.arrow_downward,
+                        TerminalKey.down => StrokeIcon(
+                          StrokeGlyph.arrowDown,
                           size: 18,
                           color: t.text,
                         ),

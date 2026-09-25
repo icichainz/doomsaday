@@ -71,14 +71,14 @@ void main() {
   });
 
   group('Pairing', () {
-    test('a fingerprint reads as eight groups of eight', () {
-      final List<String> groups = fingerprintGroups(
-        'A4:E9:7C:10:3B:65:D2:8F:41:0A:96:BE:57:2D:C8:34:'
+    test('a fingerprint reads as the agent prints it, four lines of two', () {
+      final List<List<String>> lines = fingerprintLines(
+        'a4e97c103b65d28f410a96be572dc834'
         '1F:70:AB:59:E3:06:8D:C1:75:42:9B:E0:13:6A:2F:5C',
       );
-      expect(groups, hasLength(8));
-      expect(groups.first, 'A4E97C10');
-      expect(groups.last, '136A2F5C');
+      expect(lines, hasLength(4));
+      expect(lines.first, <String>['A4:E9:7C:10', '3B:65:D2:8F']);
+      expect(lines.last, <String>['75:42:9B:E0', '13:6A:2F:5C']);
     });
 
     test('each failure gets its own title', () {
@@ -251,6 +251,50 @@ void main() {
       await settle(tester);
       expect(find.text('Exited 0'), findsOneWidget);
       expect(find.text('Open again'), findsOneWidget);
+      await disposeApp(tester);
+    });
+
+    testWidgets('demo mode: "Pin and pair" adds the server and opens it', (
+      WidgetTester tester,
+    ) async {
+      final repo = await pumpApp(tester, size: phone);
+      goTo(tester, '/pair');
+      await settle(tester);
+      final Finder fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'edge-1');
+      await tester.enterText(fields.at(1), 'https://edge-1.example.com:8443');
+      await tester.enterText(fields.at(2), 'pt_demo');
+      await tester.tap(find.text('Test connection and pair'));
+      await settle(tester);
+      expect(find.text('Trust this certificate?'), findsOneWidget);
+      expect(find.text('SHA-256 FINGERPRINT'), findsOneWidget);
+      await tester.tap(find.text('Pin and pair'));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(repo.servers.map((Server s) => s.id), contains('edge-1'));
+      expect(locationOf(tester), '/s/edge-1/overview');
+      await disposeApp(tester);
+    });
+
+    testWidgets('demo mode: the desktop dialog pins on its second step', (
+      WidgetTester tester,
+    ) async {
+      final repo = await pumpApp(tester, size: desktop);
+      goTo(tester, '/s/prod-eu-1/overview');
+      await settle(tester);
+      await tester.tap(find.text('Pair a server'));
+      await settle(tester);
+      final Finder fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'edge-2');
+      await tester.enterText(fields.at(1), 'https://edge-2.example.com:8443');
+      await tester.enterText(fields.at(2), 'pt_demo');
+      await tester.tap(find.text('Test connection and pair'));
+      await settle(tester);
+      expect(find.text('PAIR A SERVER · STEP 2 OF 2'), findsOneWidget);
+      await tester.tap(find.text('Pin and pair'));
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(repo.servers.map((Server s) => s.id), contains('edge-2'));
       await disposeApp(tester);
     });
   });

@@ -264,7 +264,7 @@ class _PairAgentScreenState extends ConsumerState<PairAgentScreen> {
         PairErrorCard(failure: _error!)
       else
         const InfoNote(
-          icon: Icons.shield_outlined,
+          glyph: StrokeGlyph.shield,
           text:
               'HTTPS only. The token is exchanged for a device key stored in '
               "this device's secure storage, and the agent's certificate is "
@@ -321,17 +321,91 @@ class _ServerLimitOverServersState
   Widget build(BuildContext context) => const ServersScreen();
 }
 
-/// A SHA-256 fingerprint as eight groups of eight hex characters, the unit a
-/// person can compare at a glance. The agent prints the same bytes as
-/// `A4:E9:7C:10:…`; every group here is four of those pairs without colons.
-List<String> fingerprintGroups(String fingerprint) {
+/// A SHA-256 fingerprint the way the agent prints it on the host
+/// (`A4:E9:7C:10:…`), as the certificate step shows it on every width
+/// (`PairConfirm`, `DesktopPair`): four lines of eight bytes, each line two
+/// groups of four, so it can be compared character for character.
+List<List<String>> fingerprintLines(String fingerprint) {
   final String hex = fingerprint
       .replaceAll(RegExp('[^0-9a-fA-F]'), '')
       .toUpperCase();
-  return <String>[
-    for (int i = 0; i < hex.length; i += 8)
-      hex.substring(i, i + 8 > hex.length ? hex.length : i + 8),
+  final List<String> bytes = <String>[
+    for (int i = 0; i + 1 < hex.length; i += 2) hex.substring(i, i + 2),
   ];
+  return <List<String>>[
+    for (int i = 0; i < bytes.length; i += 8)
+      <String>[
+        bytes.skip(i).take(4).join(':'),
+        if (bytes.length > i + 4) bytes.skip(i + 4).take(4).join(':'),
+      ],
+  ];
+}
+
+/// The fingerprint block both certificate steps share.
+class FingerprintBlock extends StatelessWidget {
+  const FingerprintBlock({super.key, required this.fingerprint});
+
+  final String fingerprint;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    final List<List<String>> lines = fingerprintLines(fingerprint);
+    final TextStyle mono = TextStyle(
+      fontFamily: AppFonts.mono,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      height: 1.6,
+      color: t.text,
+    );
+    return Semantics(
+      label:
+          'SHA-256 fingerprint '
+          '${lines.expand((List<String> l) => l).join(' ')}',
+      container: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: t.codeBlock,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: t.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Text(
+              'SHA-256 FINGERPRINT',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.6,
+                color: t.mutedText,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SelectionArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  for (final List<String> line in lines)
+                    Row(
+                      children: <Widget>[
+                        for (int i = 0; i < line.length; i++) ...<Widget>[
+                          if (i > 0) const SizedBox(width: 22),
+                          Text(line[i], style: mono),
+                        ],
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Why pairing stopped, in the words the Pair screen's red card uses
@@ -400,7 +474,7 @@ class PairErrorCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Icon(Icons.gpp_bad_outlined, size: 20, color: t.danger),
+            StrokeIcon(StrokeGlyph.shieldX, size: 20, color: t.danger),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -442,14 +516,6 @@ class _FingerprintBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
-    final List<String> groups = fingerprintGroups(preview.fingerprint);
-    final TextStyle groupStyle = TextStyle(
-      fontFamily: AppFonts.mono,
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-      letterSpacing: 0.4,
-      color: t.text,
-    );
     return ModalBody(
       handle: sheet,
       children: <Widget>[
@@ -462,8 +528,8 @@ class _FingerprintBody extends StatelessWidget {
                 color: t.accentTint,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(
-                Icons.verified_user_outlined,
+              child: StrokeIcon(
+                StrokeGlyph.shieldCheck,
                 size: 22,
                 color: t.accent,
               ),
@@ -475,7 +541,7 @@ class _FingerprintBody extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    'Check the certificate',
+                    'Trust this certificate?',
                     style: AppText.sheetTitle.copyWith(color: t.text),
                   ),
                   const SizedBox(height: 2),
@@ -491,57 +557,13 @@ class _FingerprintBody extends StatelessWidget {
           ],
         ),
         Text(
-          'Compare with the fingerprint the agent printed on the host. If '
-          'every group matches, pin it: from then on the app refuses this '
-          'server if the certificate changes.',
+          'The agent answered, and the fingerprint it reported matches the '
+          'certificate it presented. Compare it with what the agent printed '
+          'on the host, then pin it. The app refuses the connection if it '
+          'ever changes.',
           style: AppText.label.copyWith(color: t.codeText, height: 1.5),
         ),
-        Semantics(
-          label: 'SHA-256 fingerprint ${groups.join(' ')}',
-          container: true,
-          excludeSemantics: true,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-            decoration: BoxDecoration(
-              color: t.codeBlock,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: t.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Text(
-                  'SHA-256 FINGERPRINT',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.6,
-                    color: t.mutedText,
-                  ),
-                ),
-                for (int row = 0; row < groups.length; row += 4) ...<Widget>[
-                  SizedBox(height: row == 0 ? 10 : 6),
-                  Row(
-                    children: <Widget>[
-                      for (int i = row; i < row + 4; i++) ...<Widget>[
-                        if (i > row) const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            i < groups.length ? groups[i] : '',
-                            maxLines: 1,
-                            softWrap: false,
-                            style: groupStyle,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
+        FingerprintBlock(fingerprint: preview.fingerprint),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           decoration: BoxDecoration(
@@ -551,10 +573,7 @@ class _FingerprintBody extends StatelessWidget {
           child: Column(
             children: <Widget>[
               _PreviewRow('Agent version', preview.agentVersion, mono: true),
-              _PreviewRow(
-                'Role for ${thisDeviceLabel(capitalized: false)}',
-                preview.role.label,
-              ),
+              _PreviewRow('Your role', preview.role.label),
               _PreviewRow(
                 'Device id',
                 preview.deviceId,
@@ -727,30 +746,9 @@ class _ConfirmStep extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onPin;
 
-  /// Four lines of eight bytes, each line split into two groups of four.
-  static List<List<String>> groups(String fingerprint) {
-    final List<String> bytes = fingerprint.split(':');
-    final List<List<String>> lines = <List<String>>[];
-    for (int i = 0; i < bytes.length; i += 8) {
-      final List<String> line = bytes.skip(i).take(8).toList();
-      lines.add(<String>[
-        line.take(4).join(':'),
-        if (line.length > 4) line.skip(4).join(':'),
-      ]);
-    }
-    return lines;
-  }
-
   @override
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
-    final TextStyle mono = TextStyle(
-      fontFamily: AppFonts.mono,
-      fontSize: 14,
-      fontWeight: FontWeight.w500,
-      height: 1.6,
-      color: t.text,
-    );
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
         const SingleActivator(LogicalKeyboardKey.enter): onPin,
@@ -818,49 +816,7 @@ class _ConfirmStep extends StatelessWidget {
               'connection if it ever changes.',
               style: AppText.body.copyWith(color: t.codeText, height: 1.5),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: t.codeBlock,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: t.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  Text(
-                    'SHA-256 FINGERPRINT',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.6,
-                      color: t.mutedText,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SelectionArea(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        for (final List<String> line in groups(
-                          preview.fingerprint,
-                        ))
-                          Row(
-                            children: <Widget>[
-                              for (int i = 0; i < line.length; i++) ...<Widget>[
-                                if (i > 0) const SizedBox(width: 22),
-                                Text(line[i], style: mono),
-                              ],
-                            ],
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            FingerprintBlock(fingerprint: preview.fingerprint),
             RowGroup(
               radius: 12,
               horizontalPadding: 14,

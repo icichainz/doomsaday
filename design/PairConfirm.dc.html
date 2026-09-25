@@ -29,19 +29,16 @@ button,input{font-family:inherit}
 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.500-3.200 8-8 9-4.800-1-8-4.500-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>
 </div>
 <div style="min-width: 0; display: flex; flex-direction: column; gap: 2px;">
-<h1 id="pc-title" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.3px;">Check the certificate</h1>
+<h1 id="pc-title" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.3px;">Trust this certificate?</h1>
 <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AAAB1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">agent.example.com:8443</div>
 </div>
 </div>
 
-<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #C9D6DB;">Compare with the fingerprint the agent printed on the host. If every group matches, pin it: from then on the app refuses this server if the certificate changes.</p>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #C9D6DB;">The agent answered, and the fingerprint it reported matches the certificate it presented. Compare it with what the agent printed on the host, then pin it. The app refuses the connection if it ever changes.</p>
 
 <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; border-radius: 14px; background: #0A0F11; border: 1px solid #243036;">
 <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #9AAAB1;">SHA-256 fingerprint</div>
-<div aria-label="A4E97C10 3B65D28F 410A96BE 572DC834 1F70AB59 E3068DC1 75429BE0 136A2F5C" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500; letter-spacing: 0.4px; color: #E8EEF0;">
-<span>A4E97C10</span><span>3B65D28F</span><span>410A96BE</span><span>572DC834</span>
-<span>1F70AB59</span><span>E3068DC1</span><span>75429BE0</span><span>136A2F5C</span>
-</div>
+<code aria-label="A4:E9:7C:10 3B:65:D2:8F 41:0A:96:BE 57:2D:C8:34 1F:70:AB:59 E3:06:8D:C1 75:42:9B:E0 13:6A:2F:5C" style="display: flex; flex-direction: column; gap: 2px; font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500; line-height: 1.6; color: #E8EEF0; user-select: text;"><div style="display: flex; gap: 22px;"><span>A4:E9:7C:10</span><span>3B:65:D2:8F</span></div><div style="display: flex; gap: 22px;"><span>41:0A:96:BE</span><span>57:2D:C8:34</span></div><div style="display: flex; gap: 22px;"><span>1F:70:AB:59</span><span>E3:06:8D:C1</span></div><div style="display: flex; gap: 22px;"><span>75:42:9B:E0</span><span>13:6A:2F:5C</span></div></code>
 </div>
 
 <dl style="margin: 0; display: flex; flex-direction: column; padding: 0 14px; border-radius: 16px; border: 1px solid #243036;">
@@ -50,7 +47,7 @@ button,input{font-family:inherit}
 <dd style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 13px;">1.5.0</dd>
 </div>
 <div style="display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid #243036;">
-<dt style="flex-grow: 1; font-size: 14px; color: #9AAAB1;">Role for this phone</dt>
+<dt style="flex-grow: 1; font-size: 14px; color: #9AAAB1;">Your role</dt>
 <dd style="margin: 0; font-size: 14px;">Admin</dd>
 </div>
 <div style="display: flex; align-items: center; gap: 12px; min-height: 44px;">

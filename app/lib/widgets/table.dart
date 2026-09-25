@@ -12,6 +12,7 @@ import '../theme/app_theme.dart';
 import '../theme/tokens.dart';
 import 'buttons.dart';
 import 'context_menu.dart';
+import 'stroke_icons.dart';
 
 class TableColumn<T> {
   const TableColumn({
@@ -294,8 +295,8 @@ class _HeaderLabel<T> extends StatelessWidget {
         if (sorted) ...<Widget>[
           const SizedBox(width: 4),
           // Biggest first points down, as the board draws it on SIZE.
-          Icon(
-            ascending ? Icons.arrow_upward : Icons.arrow_downward,
+          StrokeIcon(
+            ascending ? StrokeGlyph.arrowUp : StrokeGlyph.arrowDown,
             size: 12,
             color: t.text,
           ),

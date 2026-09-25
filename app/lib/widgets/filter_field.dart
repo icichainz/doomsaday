@@ -35,8 +35,8 @@ final screenFilterProvider = Provider<ScreenFilterFocus>(
   (ref) => ScreenFilterFocus(),
 );
 
-/// D2 and D4's filter box: 36 px with a pointer, a search glyph and the `/`
-/// hint chip on the right.
+/// The one filter box: D2 and D4's 36 px with a pointer (search glyph, `/`
+/// hint chip on the right), 44 px on touch at every width below 1100.
 class FilterField extends ConsumerStatefulWidget {
   const FilterField({
     super.key,
@@ -82,13 +82,17 @@ class _FilterFieldState extends ConsumerState<FilterField> {
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
     final Density d = context.density;
-    // With a pointer it is D2/D4's 36 px box; on a touch screen (the tablet
-    // containers list) the same box at 44 px with 15 px text.
-    final bool touch = !d.compact;
-    final double fontSize = touch ? 15 : 13;
+    // One field, three sizes: D2/D4's 36 px box with a pointer; on touch the
+    // 44 px box of the phone boards (Logs, Activity: 14 px text, 12 px
+    // sides) and, from 600, of TabletContainers (15 px text, 14 px sides).
+    final bool touch = d.field >= 44;
+    final bool phone = WindowClass.of(context).isCompact;
+    final double fontSize = !touch ? 13 : (phone ? 14 : 15);
     final Widget box = Container(
-      height: touch ? 44 : d.field,
-      padding: EdgeInsets.symmetric(horizontal: touch ? 14 : 10),
+      height: d.field,
+      padding: EdgeInsets.symmetric(
+        horizontal: !touch ? 10 : (phone ? 12 : 14),
+      ),
       decoration: BoxDecoration(
         color: t.surface,
         borderRadius: BorderRadius.circular(touch ? 12 : 10),
@@ -98,10 +102,10 @@ class _FilterFieldState extends ConsumerState<FilterField> {
         children: <Widget>[
           StrokeIcon(
             StrokeGlyph.search,
-            size: touch ? 17 : 15,
+            size: !touch ? 15 : (phone ? 16 : 17),
             color: t.mutedText,
           ),
-          SizedBox(width: touch ? 10 : 8),
+          const SizedBox(width: 8),
           Expanded(
             child: TextField(
               controller: widget.controller,
@@ -117,7 +121,7 @@ class _FilterFieldState extends ConsumerState<FilterField> {
               ),
             ),
           ),
-          if (widget.showHintKey && d.compact) ...<Widget>[
+          if (widget.showHintKey && !touch) ...<Widget>[
             const SizedBox(width: 6),
             KeyHint(label: '/'),
           ],

@@ -28,77 +28,99 @@ const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const GAP = 16;
 const HEADER = 22;
 
-/** Boards captured for both flavors, plus the edition-only ones. */
-const BOTH = [
-  'Main',
-  'PairAgent',
-  'Dashboard',
-  'Alerts',
-  'Containers',
-  'ContainerDetail',
-  'ConfirmStop',
-  'Logs',
-  'Stacks',
-  'Services',
-  'Images',
-  'Volumes',
-  'Networks',
-  'ServerSettings',
-  'AppSettings',
-  'Registries',
-  'MainLight',
-  'DashboardLight',
-  'ContainersLight',
-  'DesktopTablet',
-  'DesktopOverview',
-  'DesktopOverviewLight',
-  'DesktopContainers',
-  'DesktopConfirm',
-  'DesktopResources',
-  'DesktopFleet',
-  'DesktopLogWall',
-  'DesktopPreferences',
-];
-/** The desktop-tablet round: drawn against Pro, the palette also on Free. */
-const DESKTOP_TABLET = [
-  'DesktopStacks',
-  'DesktopVolumes',
-  'DesktopNetworks',
-  'DesktopAlerts',
-  'DesktopSettings',
-  'DesktopRegistries',
-  'DesktopPair',
-  'DesktopPalette',
-  'TabletContainers',
-  'TabletStacks',
-];
-const DESKTOP_TABLET_PRO = DESKTOP_TABLET.flatMap((b) => [b, `${b}Light`]);
-const ONLY = {
-  free: ['ProLocked', 'ProLimit', 'DesktopPalette'],
-  pro: ['ProBrand', ...DESKTOP_TABLET_PRO],
+/** Name and name + `Light`, for a round that captured both themes. */
+const withLight = (names) => names.flatMap((b) => [b, `${b}Light`]);
+
+/**
+ * Every board the harness captures, one entry per round of boards and the
+ * harness file that shoots it. `both` pairs in each flavor, `free` and `pro`
+ * only in that build.
+ */
+const ROUNDS = {
+  // screens_test.dart
+  baseline: {
+    both: [
+      'Main',
+      'PairAgent',
+      'Dashboard',
+      'Alerts',
+      'Containers',
+      'ContainerDetail',
+      'ConfirmStop',
+      'Logs',
+      'Stacks',
+      'Services',
+      'Images',
+      'Volumes',
+      'Networks',
+      'ServerSettings',
+      'AppSettings',
+      'Registries',
+      'MainLight',
+      'DashboardLight',
+      'ContainersLight',
+      'DesktopTablet',
+      'DesktopOverview',
+      'DesktopOverviewLight',
+      'DesktopContainers',
+      'DesktopConfirm',
+      'DesktopResources',
+      'DesktopFleet',
+      'DesktopLogWall',
+      'DesktopPreferences',
+    ],
+    free: ['ProLocked', 'ProLimit'],
+    pro: ['ProBrand'],
+  },
+  // screens_phone_screens_test.dart
+  phoneScreens: {
+    both: withLight([
+      'Shell',
+      'Devices',
+      'DeviceActions',
+      'Activity',
+      'PairConfirm',
+      'PairError',
+      'ContainerDetailEnv',
+    ]),
+  },
+  // screens_states_and_dialogs_test.dart; the lock's brand tile follows the
+  // edition, so each build pairs against its own lock boards.
+  statesAndDialogs: {
+    both: [
+      ...withLight(['EmptyStates', 'LoadingError']),
+      'LoadingErrorLoading',
+      ...withLight(['JobSheet', 'JobDone']),
+      ...withLight(['DesktopJob', 'MainDemo']),
+    ],
+    free: withLight(['LockScreen', 'DesktopLock', 'ProUpgrade']),
+    pro: withLight(['LockScreenPro', 'DesktopLockPro']),
+  },
+  // screens_desktop_tablet_test.dart: drawn against Pro, the palette also on
+  // Free (with its "Search every server" row).
+  desktopTablet: {
+    free: ['DesktopPalette'],
+    pro: withLight([
+      'DesktopStacks',
+      'DesktopVolumes',
+      'DesktopNetworks',
+      'DesktopAlerts',
+      'DesktopSettings',
+      'DesktopRegistries',
+      'DesktopPair',
+      'DesktopPalette',
+      'TabletContainers',
+      'TabletStacks',
+    ]),
+  },
 };
 
-/** Branch states-and-dialogs: empty, error and loading states, jobs, lock. */
-const STATES_AND_DIALOGS = [
-  'EmptyStates',
-  'EmptyStatesLight',
-  'LoadingError',
-  'LoadingErrorLight',
-  'LoadingErrorLoading',
-  'JobSheet',
-  'JobSheetLight',
-  'JobDone',
-  'DesktopJob',
-  'DesktopJobLight',
-  'LockScreen',
-  'LockScreenLight',
-  'DesktopLock',
-  'DesktopLockLight',
-  'MainDemo',
-  'MainDemoLight',
+/** The boards one flavor pairs, in round order, each once. */
+const boardsFor = (flavor) => [
+  ...new Set(
+    Object.values(ROUNDS).flatMap((r) => [...(r.both ?? []), ...(r[flavor] ?? [])]),
+  ),
 ];
-BOTH.push(...STATES_AND_DIALOGS);
-ONLY.free.push('ProUpgrade', 'ProUpgradeLight');
 
 /** App captures that pair against a board of another name. */
 const DESIGN_OF = { LoadingErrorLoading: 'LoadingError' };
@@ -187,18 +209,7 @@ const flavors = process.argv.slice(2).length
 
 let bad = 0;
 for (const flavor of flavors) {
-  // Boards captured by any other harness file (screens_<branch>_test.dart)
-  // pair automatically when both PNGs exist.
-  const listed = new Set([...BOTH, ...Object.values(ONLY).flat()]);
-  const extra = fs.existsSync(path.join(appDir, flavor))
-    ? fs
-        .readdirSync(path.join(appDir, flavor))
-        .filter((f) => f.endsWith('.png'))
-        .map((f) => f.slice(0, -4))
-        .filter((b) => !listed.has(b) && fs.existsSync(path.join(designDir, `${b}.png`)))
-        .sort()
-    : [];
-  for (const board of [...BOTH, ...(ONLY[flavor] ?? []), ...extra]) {
+  for (const board of boardsFor(flavor)) {
     const problem = compose(board, flavor);
     if (problem) {
       bad++;

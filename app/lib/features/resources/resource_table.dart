@@ -112,7 +112,7 @@ class _ResourceTableState<T> extends State<ResourceTable<T>> {
           EmptyView(
             glyph: StrokeGlyph.search,
             title: widget.emptyTitle,
-            message: 'Nothing here matches this filter.',
+            message: 'Nothing here matches that search.',
           )
         else
           DataTableView<T>(

@@ -11,6 +11,7 @@ import '../../widgets/filter_field.dart';
 import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 
 /// The chips above the log.
 enum ActivityFilter {
@@ -160,10 +161,17 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               selfDeviceId: selfId,
             );
             if (days.isEmpty) {
-              return const EmptyView(
-                icon: Icons.search_off,
-                title: 'Nothing matches',
-                message: 'Try another filter, or clear the text.',
+              return EmptyView(
+                glyph: StrokeGlyph.search,
+                title: 'No matching activity',
+                message: 'Nothing here matches that search.',
+                secondary: EmptyAction(
+                  'Clear filter',
+                  onPressed: () => setState(() {
+                    _query.clear();
+                    _filter = ActivityFilter.all;
+                  }),
+                ),
               );
             }
             return Column(

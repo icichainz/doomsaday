@@ -102,7 +102,7 @@ class _ContainersScreenState extends ConsumerState<ContainersScreen> {
           actions: <Widget>[
             if (!tablet)
               DoomIconButton(
-                icon: _searching ? Icons.close : Icons.search,
+                glyph: _searching ? StrokeGlyph.close : StrokeGlyph.search,
                 semanticLabel: _searching
                     ? 'Close search'
                     : 'Search containers',

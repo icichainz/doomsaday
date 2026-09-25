@@ -431,7 +431,7 @@ class _SectionPane extends StatelessWidget {
                 ),
               ),
               DoomIconButton(
-                icon: Icons.close,
+                glyph: StrokeGlyph.close,
                 semanticLabel: 'Close preferences',
                 size: 32,
                 radius: 10,

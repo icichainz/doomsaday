@@ -119,7 +119,7 @@ class _ServersScreenState extends ConsumerState<ServersScreen> {
                     onPressed: () => openPreferences(context),
                   ),
                   DoomIconButton(
-                    icon: Icons.add,
+                    glyph: StrokeGlyph.plus,
                     semanticLabel: 'Add server',
                     onPressed: () => showPairAgent(context, ref),
                   ),
@@ -159,7 +159,7 @@ class _ServersScreenState extends ConsumerState<ServersScreen> {
                           'Pair an agent, or look around with sample data.',
                       primary: EmptyAction(
                         'Pair a new server',
-                        icon: Icons.add,
+                        glyph: StrokeGlyph.plus,
                         onPressed: () => showPairAgent(context, ref),
                       ),
                       secondary: EmptyAction(
@@ -212,7 +212,7 @@ class _ServersScreenState extends ConsumerState<ServersScreen> {
                     Expanded(
                       child: DoomButton(
                         'Pair a new server',
-                        icon: Icons.add,
+                        glyph: StrokeGlyph.plus,
                         tone: ButtonTone.primary,
                         height: 56,
                         radius: 18,
@@ -261,7 +261,7 @@ class _SearchField extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          Icon(Icons.search, size: 18, color: t.mutedText),
+          StrokeIcon(StrokeGlyph.search, size: 18, color: t.mutedText),
           const SizedBox(width: 10),
           Expanded(
             child: TextField(

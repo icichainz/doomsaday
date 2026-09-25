@@ -135,7 +135,7 @@ class _ActionRow extends StatelessWidget {
           Expanded(
             child: DoomButton(
               label,
-              icon: Icons.add,
+              glyph: StrokeGlyph.plus,
               tone: ButtonTone.primary,
               height: 48,
               radius: 14,
@@ -380,7 +380,7 @@ class _Images extends ConsumerWidget {
       label: 'Image reference',
       hint: 'registry.example.com/api:2.9.0',
       confirmLabel: 'Pull',
-      icon: Icons.download,
+      glyph: StrokeGlyph.download,
     );
     if (reference == null || !context.mounted) return;
     await runJob(context, ref, serverId, (api) => api.pullImage(reference));
@@ -405,7 +405,7 @@ class _Images extends ConsumerWidget {
         builder: (ImageList list) => ResourceTable<DockerImage>(
           rows: list.images,
           filterHint: 'Filter images',
-          emptyTitle: 'No images',
+          emptyTitle: 'No matching images',
           initialSort: 1,
           initialAscending: false,
           footer:
@@ -443,7 +443,7 @@ class _Images extends ConsumerWidget {
             if (role.canOperate)
               DoomButton(
                 'Pull image',
-                icon: Icons.add,
+                glyph: StrokeGlyph.plus,
                 height: 36,
                 radius: 10,
                 tone: ButtonTone.primary,
@@ -513,7 +513,7 @@ class _Images extends ConsumerWidget {
               label: 'Image reference',
               hint: 'registry.example.com/api:2.9.0',
               confirmLabel: 'Pull',
-              icon: Icons.download,
+              glyph: StrokeGlyph.download,
             );
             if (ref0 == null || !context.mounted) return;
             await runJob(context, ref, serverId, (api) => api.pullImage(ref0));
@@ -668,7 +668,7 @@ class _Volumes extends ConsumerWidget {
       label: 'Volume name',
       hint: 'web-platform_cache',
       confirmLabel: 'Create',
-      icon: Icons.add,
+      glyph: StrokeGlyph.plus,
     );
     if (name == null || !context.mounted) return;
     await runAction(
@@ -698,7 +698,7 @@ class _Volumes extends ConsumerWidget {
         builder: (VolumeList list) => ResourceTable<VolumeInfo>(
           rows: list.volumes,
           filterHint: 'Filter volumes',
-          emptyTitle: 'No volumes',
+          emptyTitle: 'No matching volumes',
           initialSort: 1,
           initialAscending: false,
           footer: 'right-click a row for Remove, Copy name and Show containers',
@@ -732,7 +732,7 @@ class _Volumes extends ConsumerWidget {
             if (role.canCreateResources)
               DoomButton(
                 'Create volume',
-                icon: Icons.add,
+                glyph: StrokeGlyph.plus,
                 height: 36,
                 radius: 10,
                 tone: ButtonTone.primary,
@@ -809,7 +809,7 @@ class _Volumes extends ConsumerWidget {
               label: 'Volume name',
               hint: 'web-platform_cache',
               confirmLabel: 'Create',
-              icon: Icons.add,
+              glyph: StrokeGlyph.plus,
             );
             if (name == null || !context.mounted) return;
             await runAction(
@@ -969,7 +969,7 @@ class _Networks extends ConsumerWidget {
       label: 'Network name',
       hint: 'web-platform_edge',
       confirmLabel: 'Create',
-      icon: Icons.add,
+      glyph: StrokeGlyph.plus,
     );
     if (name == null || !context.mounted) return;
     await runAction(
@@ -1001,7 +1001,7 @@ class _Networks extends ConsumerWidget {
         builder: (NetworkList list) => ResourceTable<NetworkInfo>(
           rows: list.networks,
           filterHint: 'Filter networks',
-          emptyTitle: 'No networks',
+          emptyTitle: 'No matching networks',
           initialSort: 0,
           footer:
               'right-click a row for Remove, Copy name and Show containers · '
@@ -1038,7 +1038,7 @@ class _Networks extends ConsumerWidget {
             if (role.canCreateResources)
               DoomButton(
                 'Create network',
-                icon: Icons.add,
+                glyph: StrokeGlyph.plus,
                 height: 36,
                 radius: 10,
                 tone: ButtonTone.primary,
@@ -1114,7 +1114,7 @@ class _Networks extends ConsumerWidget {
               label: 'Network name',
               hint: 'web-platform_edge',
               confirmLabel: 'Create',
-              icon: Icons.add,
+              glyph: StrokeGlyph.plus,
             );
             if (name == null || !context.mounted) return;
             await runAction(
