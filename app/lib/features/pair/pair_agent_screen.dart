@@ -17,6 +17,7 @@ import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
 import '../../widgets/surfaces.dart';
+import '../../widgets/stroke_icons.dart';
 import '../servers/servers_screen.dart';
 
 const String _installCommand =
@@ -72,6 +73,10 @@ class _PairAgentScreenState extends ConsumerState<PairAgentScreen> {
   bool _busy = false;
   PairFailure? _error;
 
+  /// In the desktop dialog the certificate check is the dialog's second
+  /// step (DesktopPair) rather than a second dialog stacked on the first.
+  PairPreview? _preview;
+
   @override
   void dispose() {
     _name.dispose();
@@ -94,6 +99,11 @@ class _PairAgentScreenState extends ConsumerState<PairAgentScreen> {
       );
       if (!mounted) return;
 
+      if (widget.dialog) {
+        setState(() => _preview = preview);
+        return;
+      }
+
       final bool? trusted = await showAdaptiveModal<bool>(
         context,
         builder: (BuildContext context, bool sheet) =>
@@ -104,19 +114,44 @@ class _PairAgentScreenState extends ConsumerState<PairAgentScreen> {
         return;
       }
 
-      final PairResult result = await repo.completePairing(preview);
-      ref.invalidate(serverCardsProvider);
-      if (!mounted) return;
-      if (widget.dialog) Navigator.of(context).pop();
-      notify(
-        context,
-        '${result.server.name} paired as ${result.role.label.toLowerCase()} · '
-        'certificate pinned',
-      );
-      context.go('/s/${result.server.id}/overview');
+      await _complete(preview);
     } on AgentException catch (error) {
       if (mounted) {
         setState(() => _error = PairFailure.from(error, agentUrl: _url.text));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// Pins the certificate and stores the device key.
+  Future<void> _complete(PairPreview preview) async {
+    final ServersRepository repo = ref.read(serversRepositoryProvider);
+    final PairResult result = await repo.completePairing(preview);
+    ref.invalidate(serverCardsProvider);
+    if (!mounted) return;
+    if (widget.dialog) Navigator.of(context).pop();
+    notify(
+      context,
+      '${result.server.name} paired as ${result.role.label.toLowerCase()} · '
+      'certificate pinned',
+    );
+    context.go('/s/${result.server.id}/overview');
+  }
+
+  /// "Pin and pair" in the dialog's second step.
+  Future<void> _pin() async {
+    final PairPreview? preview = _preview;
+    if (preview == null || _busy) return;
+    setState(() => _busy = true);
+    try {
+      await _complete(preview);
+    } on AgentException catch (error) {
+      if (mounted) {
+        setState(() {
+          _preview = null;
+          _error = PairFailure.from(error, agentUrl: _url.text);
+        });
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -138,11 +173,23 @@ class _PairAgentScreenState extends ConsumerState<PairAgentScreen> {
             )
           : const _ServerLimitOverServers();
     }
+    final PairPreview? preview = _preview;
+    if (widget.dialog && preview != null) {
+      return _ConfirmStep(
+        preview: preview,
+        busy: _busy,
+        onBack: () => setState(() => _preview = null),
+        onPin: _pin,
+      );
+    }
     final List<Widget> body = _body(context);
     if (!widget.dialog) {
       return PushedPage(gap: 18, fillLast: true, children: body);
     }
-    return ModalBody(handle: false, children: body);
+    return ModalBody(
+      handle: false,
+      children: <Widget>[const _DialogStep(step: 1), ...body],
+    );
   }
 
   List<Widget> _body(BuildContext context) {
@@ -624,6 +671,264 @@ class _Step extends StatelessWidget {
           child: Text(title, style: AppText.rowTitle.copyWith(color: t.text)),
         ),
       ],
+    );
+  }
+}
+
+/// The dialog's top line: which step, and the close button.
+class _DialogStep extends StatelessWidget {
+  const _DialogStep({required this.step});
+
+  final int step;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    return Row(
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            'PAIR A SERVER · STEP $step OF 2',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.6,
+              color: t.mutedText,
+            ),
+          ),
+        ),
+        DoomIconButton(
+          glyph: StrokeGlyph.close,
+          semanticLabel: 'Close',
+          size: 32,
+          radius: 8,
+          filled: false,
+          foreground: t.codeText,
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+      ],
+    );
+  }
+}
+
+/// DesktopPair: the certificate check as the pair dialog's second step —
+/// the fingerprint in the groups the agent prints on the host, what pairing
+/// grants, and Back, Cancel, "Pin and pair". Return pins.
+class _ConfirmStep extends StatelessWidget {
+  const _ConfirmStep({
+    required this.preview,
+    required this.busy,
+    required this.onBack,
+    required this.onPin,
+  });
+
+  final PairPreview preview;
+  final bool busy;
+  final VoidCallback onBack;
+  final VoidCallback onPin;
+
+  /// Four lines of eight bytes, each line split into two groups of four.
+  static List<List<String>> groups(String fingerprint) {
+    final List<String> bytes = fingerprint.split(':');
+    final List<List<String>> lines = <List<String>>[];
+    for (int i = 0; i < bytes.length; i += 8) {
+      final List<String> line = bytes.skip(i).take(8).toList();
+      lines.add(<String>[
+        line.take(4).join(':'),
+        if (line.length > 4) line.skip(4).join(':'),
+      ]);
+    }
+    return lines;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    final TextStyle mono = TextStyle(
+      fontFamily: AppFonts.mono,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      height: 1.6,
+      color: t.text,
+    );
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.enter): onPin,
+      },
+      child: Focus(
+        autofocus: true,
+        child: ModalBody(
+          handle: false,
+          children: <Widget>[
+            const _DialogStep(step: 2),
+            Row(
+              children: <Widget>[
+                Container(
+                  width: 44,
+                  height: 44,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: t.accentTint,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: StrokeIcon(
+                    StrokeGlyph.shield,
+                    size: 20,
+                    color: t.accent,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        'Trust this certificate?',
+                        style: AppText.sheetTitle.copyWith(
+                          color: t.text,
+                          fontSize: 22,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text.rich(
+                        TextSpan(
+                          children: <InlineSpan>[
+                            TextSpan(text: '${preview.server.name} · '),
+                            TextSpan(
+                              text: preview.server.host,
+                              style: const TextStyle(fontFamily: AppFonts.mono),
+                            ),
+                          ],
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.small.copyWith(color: t.mutedText),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              'The agent answered, and the fingerprint it reported matches '
+              'the certificate it presented. Compare it with what the agent '
+              'printed on the host, then pin it. The app refuses the '
+              'connection if it ever changes.',
+              style: AppText.body.copyWith(color: t.codeText, height: 1.5),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: t.codeBlock,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: t.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(
+                    'SHA-256 FINGERPRINT',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.6,
+                      color: t.mutedText,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SelectionArea(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        for (final List<String> line in groups(
+                          preview.fingerprint,
+                        ))
+                          Row(
+                            children: <Widget>[
+                              for (int i = 0; i < line.length; i++) ...<Widget>[
+                                if (i > 0) const SizedBox(width: 22),
+                                Text(line[i], style: mono),
+                              ],
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            RowGroup(
+              radius: 12,
+              horizontalPadding: 14,
+              dividerColor: t.faintDivider,
+              children: <Widget>[
+                DetailRow('Agent version', preview.agentVersion, minHeight: 44),
+                DetailRow('Your role', preview.role.label, minHeight: 44),
+                DetailRow(
+                  'Device id',
+                  preview.deviceId,
+                  mono: true,
+                  minHeight: 44,
+                ),
+              ],
+            ),
+            Row(
+              children: <Widget>[
+                Semantics(
+                  button: true,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: onBack,
+                    child: SizedBox(
+                      height: 40,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          const SizedBox(width: 4),
+                          StrokeIcon(
+                            StrokeGlyph.chevronLeft,
+                            size: 16,
+                            color: t.mutedText,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Back',
+                            style: AppText.label.copyWith(
+                              color: t.mutedText,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                DoomButton(
+                  'Cancel',
+                  height: 40,
+                  radius: 10,
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                const SizedBox(width: 10),
+                DoomButton(
+                  'Pin and pair',
+                  height: 40,
+                  radius: 10,
+                  tone: ButtonTone.primary,
+                  busy: busy,
+                  onPressed: onPin,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

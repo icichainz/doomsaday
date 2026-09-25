@@ -82,6 +82,14 @@ class _Column extends StatelessWidget {
   }
 }
 
+/// T1's 28 px page padding on the tablet, the density's gutter elsewhere.
+double _side(BuildContext context) => WindowClass.of(context).isMedium
+    ? ShellMetrics.tabletGutter
+    : context.density.gutter;
+
+double _top(BuildContext context, double top) =>
+    WindowClass.of(context).isMedium ? ShellMetrics.tabletGutter : top;
+
 /// A tab screen inside the server shell; the shell owns the Scaffold.
 class ShellPage extends StatelessWidget {
   const ShellPage({
@@ -98,14 +106,14 @@ class ShellPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
-    final double side = context.density.gutter;
+    final double side = _side(context);
     return Material(
       color: t.ground,
       child: SafeArea(
         bottom: false,
         child: _Column(
           gap: gap,
-          padding: EdgeInsets.fromLTRB(side, top, side, 20),
+          padding: EdgeInsets.fromLTRB(side, _top(context, top), side, 20),
           children: children,
         ),
       ),
@@ -131,14 +139,14 @@ class PushedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
-    final double side = context.density.gutter;
+    final double side = _side(context);
     return Scaffold(
       backgroundColor: t.ground,
       body: SafeArea(
         child: _Column(
           gap: gap,
           fillLast: fillLast,
-          padding: EdgeInsets.fromLTRB(side, top, side, 24),
+          padding: EdgeInsets.fromLTRB(side, _top(context, top), side, 24),
           children: children,
         ),
       ),

@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../theme/tokens.dart';
 import 'primitives.dart';
 import 'state_views.dart';
+import 'stroke_icons.dart';
 
 /// D1, D4, D5 and D6's `<main>`: 26 px top, 32 px sides, a fixed gap between
 /// blocks and a last child that may fill the rest of the window.
@@ -71,12 +72,17 @@ class DesktopHeader extends StatelessWidget {
     this.pill,
     this.subtitle,
     this.actions = const <Widget>[],
+    this.eyebrow,
   });
 
   final String title;
   final Widget? pill;
   final String? subtitle;
   final List<Widget> actions;
+
+  /// A line above the title, such as the way back from a sub-page
+  /// ([DesktopBackLink]).
+  final Widget? eyebrow;
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +94,10 @@ class DesktopHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
+              if (eyebrow != null) ...<Widget>[
+                eyebrow!,
+                const SizedBox(height: 4),
+              ],
               Row(
                 children: <Widget>[
                   Flexible(
@@ -126,6 +136,46 @@ class DesktopHeader extends StatelessWidget {
           action,
         ],
       ],
+    );
+  }
+}
+
+/// `‹ Server settings` above a sub-page's title at 1100 and up, where the
+/// phone's [BackLink] is not drawn because the sidebar navigated here.
+class DesktopBackLink extends StatelessWidget {
+  const DesktopBackLink({super.key, required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    return Semantics(
+      link: true,
+      label: 'Back to $label',
+      excludeSemantics: true,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: onTap,
+          child: SizedBox(
+            height: 20,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                StrokeIcon(
+                  StrokeGlyph.chevronLeft,
+                  size: 15,
+                  color: t.mutedText,
+                ),
+                const SizedBox(width: 4),
+                Text(label, style: AppText.small.copyWith(color: t.mutedText)),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

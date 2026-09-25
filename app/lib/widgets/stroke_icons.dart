@@ -63,13 +63,13 @@ enum StrokeGlyph {
   /// The `⌘` in the Cmd+K hint.
   command,
 
-  /// A magnifier: search fields and "nothing matches" empty states.
+  /// A magnifier: search fields, the jump palette, "nothing matches".
   search,
 
   /// A tick in a circle: "Nothing needs attention".
   checkCircle,
 
-  /// A plain tick: a finished job.
+  /// A tick: a finished job, a resolved alert.
   check,
 
   /// Three linked nodes: Swarm.
@@ -78,7 +78,7 @@ enum StrokeGlyph {
   /// An arrow into a tray: pulling an image, any running job.
   download,
 
-  /// A warning triangle: errors and failed jobs.
+  /// A warning triangle: errors, failed jobs, alert cards.
   warning,
 
   /// Four equal squares: "All servers".
@@ -86,6 +86,23 @@ enum StrokeGlyph {
 
   /// An arrow out of a door: "Leave demo".
   leave,
+
+  /// A shield: the pair dialog's certificate step.
+  shield,
+
+  /// An `×`: closing a dialog.
+  close,
+
+  /// `‹`: a back link.
+  chevronLeft,
+
+  /// `+`: the create buttons.
+  plus,
+
+  /// `↑` `↓` `↵` on the jump palette's keycaps (no bundled face has them).
+  arrowUp,
+  arrowDown,
+  returnKey,
 }
 
 /// One design icon at [size] points, coloured from [IconTheme] by default.
@@ -296,6 +313,13 @@ class _StrokePainter extends CustomPainter {
     StrokeGlyph.warning => _warning(),
     StrokeGlyph.fleet => _fleet(),
     StrokeGlyph.leave => _leave(),
+    StrokeGlyph.shield => _shield(),
+    StrokeGlyph.close => _close(),
+    StrokeGlyph.chevronLeft => _chevronLeft(),
+    StrokeGlyph.plus => _plus(),
+    StrokeGlyph.arrowUp => _arrowUp(),
+    StrokeGlyph.arrowDown => _arrowDown(),
+    StrokeGlyph.returnKey => _returnKey(),
   };
 
   // <circle 11 11 r7> M21 21l-4.3-4.3
@@ -310,12 +334,6 @@ class _StrokePainter extends CustomPainter {
     ..moveTo(8, 12.5)
     ..lineTo(10.5, 15)
     ..lineTo(16, 9.5);
-
-  // M5 12.5l4.5 4.5L19 7.5
-  static Path _check() => Path()
-    ..moveTo(5, 12.5)
-    ..lineTo(9.5, 17)
-    ..lineTo(19, 7.5);
 
   // three r2.5 circles, M10.8 7.2L6.2 15.8 M13.2 7.2l4.6 8.6 M7.5 18h9
   static Path _nodes() => Path()
@@ -338,6 +356,37 @@ class _StrokePainter extends CustomPainter {
     ..lineTo(17, 10)
     ..moveTo(5, 20)
     ..lineTo(19, 20);
+
+
+  // M12 19V5 M6 11l6-6 6 6
+  static Path _arrowUp() => Path()
+    ..moveTo(12, 19)
+    ..lineTo(12, 5)
+    ..moveTo(6, 11)
+    ..lineTo(12, 5)
+    ..lineTo(18, 11);
+
+  // M12 5v14 M6 13l6 6 6-6
+  static Path _arrowDown() => Path()
+    ..moveTo(12, 5)
+    ..lineTo(12, 19)
+    ..moveTo(6, 13)
+    ..lineTo(12, 19)
+    ..lineTo(18, 13);
+
+  // M9 10l-4 4 4 4 M5 14h11a3 3 0 0 0 3-3V5
+  static Path _returnKey() => Path()
+    ..moveTo(9, 10)
+    ..lineTo(5, 14)
+    ..lineTo(9, 18)
+    ..moveTo(5, 14)
+    ..lineTo(16, 14)
+    ..arcToPoint(
+      const Offset(19, 11),
+      radius: const Radius.circular(3),
+      clockwise: false,
+    )
+    ..lineTo(19, 5);
 
   // M12 4l9 16H3z M12 10v4 M12 17.5h.01
   static Path _warning() => Path()
@@ -370,6 +419,42 @@ class _StrokePainter extends CustomPainter {
     ..lineTo(10, 8)
     ..moveTo(6, 12)
     ..lineTo(16, 12);
+
+  // M5 12l5 5 9-10
+  static Path _check() => Path()
+    ..moveTo(5, 12)
+    ..lineTo(10, 17)
+    ..lineTo(19, 7);
+
+  // M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z
+  static Path _shield() => Path()
+    ..moveTo(12, 3)
+    ..lineTo(20, 6)
+    ..lineTo(20, 12)
+    ..cubicTo(20, 16.5, 16.8, 20, 12, 21)
+    ..cubicTo(7.2, 20, 4, 16.5, 4, 12)
+    ..lineTo(4, 6)
+    ..close();
+
+  // M6 6l12 12 M18 6L6 18
+  static Path _close() => Path()
+    ..moveTo(6, 6)
+    ..lineTo(18, 18)
+    ..moveTo(18, 6)
+    ..lineTo(6, 18);
+
+  // M15 18l-6-6 6-6
+  static Path _chevronLeft() => Path()
+    ..moveTo(15, 18)
+    ..lineTo(9, 12)
+    ..lineTo(15, 6);
+
+  // M12 5v14 M5 12h14
+  static Path _plus() => Path()
+    ..moveTo(12, 5)
+    ..lineTo(12, 19)
+    ..moveTo(5, 12)
+    ..lineTo(19, 12);
 
   // <rect x y w h rx=1.5> ×4
   static Path _overview() => Path()

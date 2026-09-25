@@ -97,7 +97,12 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
             .watch(networksProvider(serverId))
             .valueOrNull;
         if (list == null) return 'Reading networks…';
-        return '${list.count} networks · ${list.unused} unused';
+        // The desktop table calls a default network "Default", not unused,
+        // so its count is the networks that could actually be pruned.
+        final int unused = WindowClass.of(context).usesDesktopExtras
+            ? list.networks.where((NetworkInfo n) => n.removable).length
+            : list.unused;
+        return '${list.count} networks · $unused unused';
     }
   }
 }
@@ -555,6 +560,10 @@ class _Images extends ConsumerWidget {
   }
 }
 
+/// Mounted volumes are in use now, so they sort as the most recent.
+int _lastUsedOrder(VolumeInfo v) =>
+    v.mounted ? 1 << 62 : (v.lastUsed?.millisecondsSinceEpoch ?? 0);
+
 class _Volumes extends ConsumerWidget {
   const _Volumes({required this.serverId});
 
@@ -749,19 +758,28 @@ class _Volumes extends ConsumerWidget {
             ),
             TableColumn<VolumeInfo>(
               label: 'Driver',
-              width: 100,
+              width: 90,
               optional: true,
               cell: (BuildContext c, VolumeInfo v) =>
                   CellText(v.driver, muted: true),
             ),
             TableColumn<VolumeInfo>(
               label: 'Mounted by',
-              width: 190,
+              width: 170,
               optional: true,
               cell: (BuildContext c, VolumeInfo v) => CellText(
-                v.mounted ? v.mountedBy.join(', ') : v.lastUsedLabel,
+                v.mounted ? v.mountedBy.join(', ') : '–',
                 muted: !v.mounted,
               ),
+            ),
+            TableColumn<VolumeInfo>(
+              label: 'Last used',
+              width: 120,
+              optional: true,
+              compare: (VolumeInfo a, VolumeInfo b) =>
+                  _lastUsedOrder(a).compareTo(_lastUsedOrder(b)),
+              cell: (BuildContext c, VolumeInfo v) =>
+                  CellText(v.lastUsedShort, muted: true),
             ),
             TableColumn<VolumeInfo>(
               label: 'Status',
@@ -985,7 +1003,9 @@ class _Networks extends ConsumerWidget {
           filterHint: 'Filter networks',
           emptyTitle: 'No networks',
           initialSort: 0,
-          footer: 'right-click a row for Remove, Copy name and Show containers',
+          footer:
+              'right-click a row for Remove, Copy name and Show containers · '
+              'default networks cannot be removed',
           matches: (NetworkInfo n, String q) =>
               n.name.toLowerCase().contains(q) ||
               n.driver.toLowerCase().contains(q) ||
@@ -995,16 +1015,17 @@ class _Networks extends ConsumerWidget {
               label: 'All ${list.networks.length}',
               keep: null,
             ),
-            ResourceChip<NetworkInfo>(
-              label:
-                  'Attached '
-                  '${list.networks.where((NetworkInfo n) => !n.unused).length}',
-              keep: (NetworkInfo n) => !n.unused,
-            ),
-            ResourceChip<NetworkInfo>(
-              label: 'Unused ${list.unused}',
-              keep: (NetworkInfo n) => n.unused,
-            ),
+            for (final String status in const <String>[
+              'In use',
+              'Unused',
+              'Default',
+            ])
+              ResourceChip<NetworkInfo>(
+                label:
+                    '$status '
+                    '${list.networks.where((NetworkInfo n) => n.statusLabel == status).length}',
+                keep: (NetworkInfo n) => n.statusLabel == status,
+              ),
           ],
           actions: <Widget>[
             if (role.canPrune)
@@ -1035,7 +1056,7 @@ class _Networks extends ConsumerWidget {
             ),
             TableColumn<NetworkInfo>(
               label: 'Driver',
-              width: 110,
+              width: 100,
               optional: true,
               cell: (BuildContext c, NetworkInfo n) =>
                   CellText(n.driver, muted: true),
@@ -1052,7 +1073,7 @@ class _Networks extends ConsumerWidget {
               width: 90,
               optional: true,
               cell: (BuildContext c, NetworkInfo n) =>
-                  CellText(n.isDefault ? 'default' : n.scope, muted: true),
+                  CellText(n.scope, muted: true),
             ),
             TableColumn<NetworkInfo>(
               label: 'Attached',
@@ -1067,8 +1088,10 @@ class _Networks extends ConsumerWidget {
               label: 'Status',
               width: 100,
               cell: (BuildContext c, NetworkInfo n) => StatusPill(
-                n.unused ? 'Unused' : 'In use',
-                tone: n.unused ? PillTone.warning : PillTone.accent,
+                n.statusLabel,
+                tone: n.isDefault
+                    ? PillTone.neutral
+                    : (n.unused ? PillTone.warning : PillTone.accent),
               ),
             ),
           ],

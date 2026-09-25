@@ -150,6 +150,13 @@ class Density {
 
   /// Screen side padding.
   final double gutter;
+
+  /// The buttons on a card (stacks, services, alerts, registries): 36 px with
+  /// a pointer, the phone board's 44 everywhere else.
+  double get cardButton => button < 44 ? button : 44;
+
+  /// The corner radius that goes with [cardButton].
+  double get cardButtonRadius => button < 44 ? 10 : 12;
 }
 
 /// Publishes the chosen [DensityMode] to the whole tree.
@@ -186,6 +193,13 @@ abstract final class ShellMetrics {
 
   /// The single column the medium class centres its content in.
   static const double readableWidth = 720;
+
+  /// T1's page padding on the tablet, against the phone's 20.
+  static const double tabletGutter = 28;
+
+  /// The tablet list rows (TabletContainers): between the phone's 66 and
+  /// the desktop's 46, and still above the 44 px touch minimum.
+  static const double tabletRow = 52;
 
   /// D3: the confirm dialog.
   static const double dialogWidth = 500;

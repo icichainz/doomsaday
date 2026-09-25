@@ -71,7 +71,9 @@ class DoomButton extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: AppText.buttonLabel.copyWith(
               color: fg,
-              fontSize: height >= 48 ? 15 : 14,
+              // 13 on the 36 px pointer buttons, as every desktop board
+              // draws them; 15 on the phone's tall ones.
+              fontSize: height >= 48 ? 15 : (height <= 36 ? 13 : 14),
             ),
           ),
         ),

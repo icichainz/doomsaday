@@ -59,7 +59,24 @@ const BOTH = [
   'DesktopLogWall',
   'DesktopPreferences',
 ];
-const ONLY = { free: ['ProLocked', 'ProLimit'], pro: ['ProBrand'] };
+/** The desktop-tablet round: drawn against Pro, the palette also on Free. */
+const DESKTOP_TABLET = [
+  'DesktopStacks',
+  'DesktopVolumes',
+  'DesktopNetworks',
+  'DesktopAlerts',
+  'DesktopSettings',
+  'DesktopRegistries',
+  'DesktopPair',
+  'DesktopPalette',
+  'TabletContainers',
+  'TabletStacks',
+];
+const DESKTOP_TABLET_PRO = DESKTOP_TABLET.flatMap((b) => [b, `${b}Light`]);
+const ONLY = {
+  free: ['ProLocked', 'ProLimit', 'DesktopPalette'],
+  pro: ['ProBrand', ...DESKTOP_TABLET_PRO],
+};
 
 /** Branch states-and-dialogs: empty, error and loading states, jobs, lock. */
 const STATES_AND_DIALOGS = [

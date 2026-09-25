@@ -112,6 +112,80 @@ class _ComposeStacks extends ConsumerWidget {
   }
 }
 
+/// The stack and service cards: the phone board's card below 600, the
+/// tighter desktop card (radius 16, 16 by 18 padding, 16 px title) from 600
+/// up, and the density's card buttons (36 px with a pointer, 44 on touch).
+class _CardChrome {
+  _CardChrome(BuildContext context)
+    : phone = WindowClass.of(context).isCompact,
+      button = context.density.cardButton,
+      radius = context.density.cardButtonRadius;
+
+  final bool phone;
+  final double button;
+  final double radius;
+
+  EdgeInsets get padding => phone
+      ? const EdgeInsets.all(16)
+      : const EdgeInsets.symmetric(horizontal: 18, vertical: 16);
+
+  double get cardRadius => phone ? AppShape.card : 16;
+
+  TextStyle get title =>
+      phone ? AppText.cardTitle : AppText.cardTitle.copyWith(fontSize: 16);
+
+  DoomButton button_(
+    String label, {
+    required VoidCallback? onPressed,
+    ButtonTone tone = ButtonTone.outline,
+    bool expand = false,
+  }) => DoomButton(
+    label,
+    height: button,
+    radius: radius,
+    tone: tone,
+    expand: expand,
+    onPressed: onPressed,
+  );
+}
+
+/// A card's primary action, then the others: one row, except on a tablet.
+/// There the grid's two columns sit in the 720 px reading column, so a card
+/// is never more than about 320 px inside at any width from 600 to 1099: the
+/// primary gets its own row and the rest share the row below (TabletStacks).
+///
+/// Decided from the window class rather than measured, because the cards sit
+/// in an `IntrinsicHeight` row that a `LayoutBuilder` cannot answer.
+class _CardActions extends StatelessWidget {
+  const _CardActions({required this.primary, required this.others});
+
+  final Widget primary;
+  final List<Widget> others;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!WindowClass.of(context).isMedium || others.length < 2) {
+      return ActionRow(primary: primary, children: others);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        primary,
+        const SizedBox(height: 8),
+        Row(
+          children: <Widget>[
+            for (int i = 0; i < others.length; i++) ...<Widget>[
+              if (i > 0) const SizedBox(width: 8),
+              Expanded(child: others[i]),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 class _StackCard extends ConsumerWidget {
   const _StackCard({required this.serverId, required this.stack});
 
@@ -162,7 +236,10 @@ class _StackCard extends ConsumerWidget {
     // A stack discovered only through container labels has no compose file,
     // so every action on it answers 409 (API_NOTES §16).
     final bool drivable = stack.configOnDisk;
+    final _CardChrome c = _CardChrome(context);
     return DoomCard(
+      padding: c.padding,
+      radius: c.cardRadius,
       borderColor: allDown ? t.dangerBorder : t.border,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -175,10 +252,7 @@ class _StackCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text(
-                      stack.name,
-                      style: AppText.cardTitle.copyWith(color: t.text),
-                    ),
+                    Text(stack.name, style: c.title.copyWith(color: t.text)),
                     const SizedBox(height: 3),
                     Text(
                       stack.path,
@@ -209,10 +283,10 @@ class _StackCard extends ConsumerWidget {
             ]),
           const SizedBox(height: 12),
           // One row, as the board draws it: the primary action flexes and the
-          // rest hug their labels.
+          // rest hug their labels. Two rows on a tablet's narrow card.
           if (allDown)
             ActionRow(
-              primary: DoomButton(
+              primary: c.button_(
                 'Start stack',
                 expand: true,
                 onPressed: role.canOperate && drivable
@@ -225,7 +299,7 @@ class _StackCard extends ConsumerWidget {
                     : null,
               ),
               children: <Widget>[
-                DoomButton(
+                c.button_(
                   'View logs',
                   onPressed: () => notify(
                     context,
@@ -235,8 +309,8 @@ class _StackCard extends ConsumerWidget {
               ],
             )
           else
-            ActionRow(
-              primary: DoomButton(
+            _CardActions(
+              primary: c.button_(
                 'Pull and redeploy',
                 expand: true,
                 tone: allUp ? ButtonTone.outline : ButtonTone.primary,
@@ -249,9 +323,10 @@ class _StackCard extends ConsumerWidget {
                       )
                     : null,
               ),
-              children: <Widget>[
-                DoomButton(
+              others: <Widget>[
+                c.button_(
                   'Restart',
+                  expand: WindowClass.of(context).isMedium,
                   onPressed: role.canOperate && drivable
                       ? () => runJob(
                           context,
@@ -262,9 +337,10 @@ class _StackCard extends ConsumerWidget {
                       : null,
                 ),
                 if (role.canStackDown)
-                  DoomButton(
+                  c.button_(
                     'Down',
                     tone: ButtonTone.danger,
+                    expand: WindowClass.of(context).isMedium,
                     onPressed: drivable ? () => _down(context, ref) : null,
                   ),
               ],
@@ -351,7 +427,10 @@ class _ServiceCard extends ConsumerWidget {
     final bool canOperate = ref.watch(roleProvider(serverId)).canOperate;
     final bool global = service.mode == ServiceMode.global;
     final bool converging = service.isConverging;
+    final _CardChrome c = _CardChrome(context);
     return DoomCard(
+      padding: c.padding,
+      radius: c.cardRadius,
       borderColor: converging ? t.warningBorder : t.border,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -364,10 +443,7 @@ class _ServiceCard extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text(
-                      service.name,
-                      style: AppText.cardTitle.copyWith(color: t.text),
-                    ),
+                    Text(service.name, style: c.title.copyWith(color: t.text)),
                     const SizedBox(height: 3),
                     Text(
                       service.image,
@@ -428,7 +504,7 @@ class _ServiceCard extends ConsumerWidget {
                         )
                       : null),
             children: <Widget>[
-              DoomButton(
+              c.button_(
                 'Update',
                 tone: converging ? ButtonTone.primary : ButtonTone.outline,
                 onPressed: canOperate
@@ -440,7 +516,7 @@ class _ServiceCard extends ConsumerWidget {
                       )
                     : null,
               ),
-              DoomButton(
+              c.button_(
                 'Roll back',
                 onPressed: canOperate
                     ? () => runJob(

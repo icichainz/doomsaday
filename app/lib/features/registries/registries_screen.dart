@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/models.dart';
 import '../../data/providers.dart';
+import '../../layout/layout.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/actions.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/desktop.dart';
 import '../../widgets/notify.dart';
 import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
@@ -74,6 +77,64 @@ class RegistriesScreen extends ConsumerWidget {
         .watch(roleProvider(serverId))
         .canManageRegistries;
 
+    const Widget note = InfoNote(
+      icon: Icons.lock_outline,
+      text:
+          'Passwords and tokens are sent once over HTTPS and stored '
+          'encrypted on the agent. The app only ever reads back the '
+          'username and status.',
+    );
+
+    // DesktopRegistries: the way back above the title, "Add a registry" in
+    // the header, and the cards two across.
+    if (WindowClass.of(context).usesDesktopExtras) {
+      return DesktopPage(
+        children: <Widget>[
+          DesktopHeader(
+            eyebrow: DesktopBackLink(
+              label: 'Server settings',
+              onTap: () => context.go('/s/$serverId/settings'),
+            ),
+            title: 'Registries',
+            subtitle: 'Used by $serverId when it pulls images',
+            actions: <Widget>[
+              if (canManage)
+                DoomButton(
+                  'Add a registry',
+                  icon: Icons.add,
+                  tone: ButtonTone.primary,
+                  height: 36,
+                  radius: 10,
+                  onPressed: () => _add(context, ref),
+                ),
+            ],
+          ),
+          AsyncSection<List<RegistryInfo>>(
+            value: registries,
+            onRetry: () => ref.invalidate(registriesProvider(serverId)),
+            loadingRows: 2,
+            loadingRowHeight: 118,
+            isEmpty: (List<RegistryInfo> list) => list.isEmpty,
+            empty: const EmptyView(
+              icon: Icons.lock_outline,
+              title: 'No registries',
+              message:
+                  'This agent pulls anonymously. Add one to use private '
+                  'images.',
+            ),
+            builder: (List<RegistryInfo> list) => CardGrid(
+              gap: 16,
+              cards: <Widget>[
+                for (final RegistryInfo registry in list)
+                  _RegistryCard(serverId: serverId, registry: registry),
+              ],
+            ),
+          ),
+          note,
+        ],
+      );
+    }
+
     return PushedPage(
       gap: 14,
       fillLast: true,
@@ -107,13 +168,7 @@ class RegistriesScreen extends ConsumerWidget {
             ],
           ),
         ),
-        const InfoNote(
-          icon: Icons.lock_outline,
-          text:
-              'Passwords and tokens are sent once over HTTPS and stored '
-              'encrypted on the agent. The app only ever reads back the '
-              'username and status.',
-        ),
+        note,
         if (canManage)
           DoomButton(
             'Add a registry',
@@ -242,7 +297,14 @@ class _RegistryCard extends ConsumerWidget {
       RegistryStatus.failed => (t.dangerBorder, PillTone.danger),
       RegistryStatus.anonymous => (t.border, PillTone.neutral),
     };
+    final bool desktop = WindowClass.of(context).usesDesktopExtras;
+    final double h = context.density.cardButton;
+    final double r = context.density.cardButtonRadius;
     return DoomCard(
+      radius: desktop ? 16 : AppShape.card,
+      padding: desktop
+          ? const EdgeInsets.symmetric(horizontal: 18, vertical: 16)
+          : const EdgeInsets.all(16),
       borderColor: border,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -283,6 +345,8 @@ class _RegistryCard extends ConsumerWidget {
             if (registry.status == RegistryStatus.anonymous)
               DoomButton(
                 'Sign in',
+                height: h,
+                radius: r,
                 expand: true,
                 onPressed: () => _edit(context, ref),
               )
@@ -295,21 +359,32 @@ class _RegistryCard extends ConsumerWidget {
                             registry.status == RegistryStatus.failed
                         ? DoomButton(
                             'Replace token',
+                            height: h,
+                            radius: r,
                             expand: true,
                             tone: ButtonTone.primary,
                             onPressed: () => _replace(context, ref),
                           )
                         : DoomButton(
                             'Test login',
+                            height: h,
+                            radius: r,
                             expand: true,
                             onPressed: () => _test(context, ref),
                           ),
                   ),
                   const SizedBox(width: 8),
-                  DoomButton('Edit', onPressed: () => _edit(context, ref)),
+                  DoomButton(
+                    'Edit',
+                    height: h,
+                    radius: r,
+                    onPressed: () => _edit(context, ref),
+                  ),
                   const SizedBox(width: 8),
                   DoomButton(
                     'Remove',
+                    height: h,
+                    radius: r,
                     tone: ButtonTone.danger,
                     onPressed: () => _remove(context, ref),
                   ),

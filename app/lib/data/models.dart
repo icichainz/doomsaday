@@ -1411,6 +1411,18 @@ class VolumeInfo {
     return 'last used ${formatRelative(when)}';
   }
 
+  /// The desktop table's "Last used" cell: `now` while mounted, otherwise
+  /// when it was last mounted, `in March` once that is long ago.
+  String get lastUsedShort {
+    if (mounted) return 'now';
+    final DateTime? when = lastUsed;
+    if (when == null) return 'never';
+    if (DateTime.now().difference(when) > _staleAfter) {
+      return 'in ${formatMonthName(when)}';
+    }
+    return formatRelative(when);
+  }
+
   factory VolumeInfo.fromJson(Map<String, Object?> json) => VolumeInfo(
     name: _str(json['name']),
     driver: _str(json['driver'], 'local'),
@@ -1472,6 +1484,11 @@ class NetworkInfo {
 
   /// A default network is never removed or pruned, whatever is attached.
   bool get removable => attached == 0 && !isDefault;
+
+  /// The desktop Status column: a default network is neither in use nor
+  /// removable, so it says so instead.
+  String get statusLabel =>
+      isDefault ? 'Default' : (unused ? 'Unused' : 'In use');
 
   factory NetworkInfo.fromJson(Map<String, Object?> json) => NetworkInfo(
     id: _str(json['id']),
