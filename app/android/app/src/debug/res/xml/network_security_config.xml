@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug builds only. The agent's insecure-http development mode serves plain
+  HTTP, and an emulator reaches the host as 10.0.2.2. Release builds have no
+  such file, so cleartext stays off everywhere, and HttpAgentApi refuses a
+  plain-http base URL outside a debug build as well.
+-->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

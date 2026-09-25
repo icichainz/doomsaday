@@ -1,0 +1,567 @@
+/// The design's own 24×24 stroke icons, painted rather than borrowed.
+///
+/// The boards draw every navigation icon as inline SVG on a 24×24 viewBox with
+/// a 2 px stroke, round caps and round joins. Material's nearest glyphs read
+/// wrong — the database cylinder became three bars, the cube became a
+/// crosshair — so the paths are transcribed here and painted with a
+/// [CustomPainter]. Colour comes from the ambient [IconTheme] unless one is
+/// given, and the stroke scales with the icon exactly as the SVG does.
+///
+/// The same painter also supplies the two text glyphs none of the bundled
+/// (subsetted) TTFs carry: `→` and `⌘`. Rendering them as text is what put
+/// empty boxes in the port mappings and the Cmd+K hint, so they are drawn
+/// instead — in the harness and in the shipped app alike.
+library;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
+/// The icons the boards draw, by the name the board gives them.
+enum StrokeGlyph {
+  /// Four outlined rectangles of different sizes.
+  overview,
+
+  /// An isometric cube.
+  containers,
+
+  /// Stacked plates.
+  stacks,
+
+  /// A database cylinder.
+  resources,
+
+  /// Two racked units with a status dot each.
+  servers,
+
+  /// A bell.
+  alerts,
+
+  /// Three sliders.
+  settings,
+
+  /// Three log lines, the fleet's Log wall.
+  logWall,
+
+  /// The gear that opens Preferences, everywhere it is offered.
+  cog,
+
+  /// A sun: the Appearance section.
+  sun,
+
+  /// A padlock: the Security section, and the app lock screen.
+  lock,
+
+  /// A heartbeat line: the Live data section.
+  pulse,
+
+  /// An `i` in a circle: the About section.
+  info,
+
+  /// The `→` in a port mapping.
+  arrowRight,
+
+  /// The `⌘` in the Cmd+K hint.
+  command,
+}
+
+/// One design icon at [size] points, coloured from [IconTheme] by default.
+class StrokeIcon extends StatelessWidget {
+  const StrokeIcon(
+    this.glyph, {
+    super.key,
+    this.size = 24,
+    this.color,
+    this.semanticLabel,
+  });
+
+  final StrokeGlyph glyph;
+  final double size;
+  final Color? color;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final Color paint =
+        color ?? IconTheme.of(context).color ?? const Color(0xFFE8EEF0);
+    final Widget icon = CustomPaint(
+      size: Size.square(size),
+      painter: _StrokePainter(glyph: glyph, color: paint),
+      isComplex: false,
+    );
+    if (semanticLabel == null) return icon;
+    return Semantics(label: semanticLabel, child: icon);
+  }
+}
+
+/// `→` sized to sit inside a line of [style] text, for a [WidgetSpan].
+class ArrowGlyph extends StatelessWidget {
+  const ArrowGlyph({super.key, required this.fontSize, this.color});
+
+  final double fontSize;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 1),
+    child: StrokeIcon(
+      StrokeGlyph.arrowRight,
+      size: fontSize * 1.05,
+      color: color,
+      semanticLabel: 'to',
+    ),
+  );
+}
+
+/// Text that may contain `→`, drawn with the glyph painted rather than typed.
+///
+/// The bundled faces have no U+2192, so a plain [Text] would show a box in the
+/// harness and rely on a system fallback everywhere else.
+class GlyphText extends StatelessWidget {
+  const GlyphText(
+    this.text, {
+    super.key,
+    required this.style,
+    this.textAlign,
+    this.maxLines = 1,
+    this.overflow = TextOverflow.ellipsis,
+  });
+
+  final String text;
+  final TextStyle style;
+  final TextAlign? textAlign;
+  final int? maxLines;
+  final TextOverflow overflow;
+
+  static const String arrow = '→';
+
+  /// True when [text] needs the painter at all.
+  static bool needsGlyphs(String text) => text.contains(arrow);
+
+  @override
+  Widget build(BuildContext context) {
+    if (!needsGlyphs(text)) {
+      return Text(
+        text,
+        style: style,
+        textAlign: textAlign,
+        maxLines: maxLines,
+        overflow: overflow,
+      );
+    }
+    final double fontSize = style.fontSize ?? 14;
+    final List<InlineSpan> spans = <InlineSpan>[];
+    for (final String part in _split(text)) {
+      if (part == arrow) {
+        spans.add(
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: ArrowGlyph(fontSize: fontSize, color: style.color),
+          ),
+        );
+      } else if (part.isNotEmpty) {
+        spans.add(TextSpan(text: part));
+      }
+    }
+    return Text.rich(
+      TextSpan(children: spans),
+      style: style,
+      textAlign: textAlign,
+      maxLines: maxLines,
+      overflow: overflow,
+    );
+  }
+
+  static List<String> _split(String text) {
+    final List<String> out = <String>[];
+    int start = 0;
+    for (int i = 0; i < text.length; i++) {
+      if (text[i] == arrow) {
+        out.add(text.substring(start, i));
+        out.add(arrow);
+        start = i + 1;
+      }
+    }
+    out.add(text.substring(start));
+    return out;
+  }
+}
+
+/// True where the operating system's own fonts are certain to carry `⌘`.
+bool get platformHasCommandGlyph =>
+    defaultTargetPlatform == TargetPlatform.macOS ||
+    defaultTargetPlatform == TargetPlatform.iOS;
+
+/// `⌘K` on a Mac, `Ctrl K` elsewhere — and the command symbol is painted, not
+/// typed, because no bundled face has U+2318.
+class CommandKeyLabel extends StatelessWidget {
+  const CommandKeyLabel({super.key, required this.letter, required this.style});
+
+  /// The letter beside the modifier, `K` for the palette.
+  final String letter;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final double fontSize = style.fontSize ?? 11;
+    // Off Apple there is no command key to name, and no bundled face carries
+    // the symbol, so the shortcut is spelled out instead.
+    if (!platformHasCommandGlyph) return Text('Ctrl $letter', style: style);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        StrokeIcon(
+          StrokeGlyph.command,
+          size: fontSize * 1.15,
+          color: style.color,
+          semanticLabel: 'Command',
+        ),
+        const SizedBox(width: 1),
+        Text(letter, style: style),
+      ],
+    );
+  }
+}
+
+class _StrokePainter extends CustomPainter {
+  const _StrokePainter({required this.glyph, required this.color});
+
+  final StrokeGlyph glyph;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double scale = size.shortestSide / 24;
+    canvas.save();
+    canvas.scale(scale);
+    final Paint paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = color
+      ..isAntiAlias = true;
+    canvas.drawPath(_path(glyph), paint);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_StrokePainter old) =>
+      old.glyph != glyph || old.color != color;
+
+  static Path _path(StrokeGlyph glyph) => switch (glyph) {
+    StrokeGlyph.overview => _overview(),
+    StrokeGlyph.containers => _containers(),
+    StrokeGlyph.stacks => _stacks(),
+    StrokeGlyph.resources => _resources(),
+    StrokeGlyph.servers => _servers(),
+    StrokeGlyph.alerts => _alerts(),
+    StrokeGlyph.settings => _settings(),
+    StrokeGlyph.logWall => _logWall(),
+    StrokeGlyph.cog => _cog(),
+    StrokeGlyph.sun => _sun(),
+    StrokeGlyph.lock => _lock(),
+    StrokeGlyph.pulse => _pulse(),
+    StrokeGlyph.info => _info(),
+    StrokeGlyph.arrowRight => _arrowRight(),
+    StrokeGlyph.command => _command(),
+  };
+
+  // <rect x y w h rx=1.5> ×4
+  static Path _overview() => Path()
+    ..addRRect(_r(3, 3, 7, 9, 1.5))
+    ..addRRect(_r(14, 3, 7, 5, 1.5))
+    ..addRRect(_r(14, 12, 7, 9, 1.5))
+    ..addRRect(_r(3, 16, 7, 5, 1.5));
+
+  // M21 8l-9-5-9 5v8l9 5 9-5z  M3 8l9 5 9-5  M12 13v8
+  static Path _containers() => Path()
+    ..moveTo(21, 8)
+    ..lineTo(12, 3)
+    ..lineTo(3, 8)
+    ..lineTo(3, 16)
+    ..lineTo(12, 21)
+    ..lineTo(21, 16)
+    ..close()
+    ..moveTo(3, 8)
+    ..lineTo(12, 13)
+    ..lineTo(21, 8)
+    ..moveTo(12, 13)
+    ..lineTo(12, 21);
+
+  // M12 3l9 5-9 5-9-5z  M3 13l9 5 9-5
+  static Path _stacks() => Path()
+    ..moveTo(12, 3)
+    ..lineTo(21, 8)
+    ..lineTo(12, 13)
+    ..lineTo(3, 8)
+    ..close()
+    ..moveTo(3, 13)
+    ..lineTo(12, 18)
+    ..lineTo(21, 13);
+
+  // <ellipse cx=12 cy=6 rx=8 ry=3>
+  // M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6
+  // M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3
+  static Path _resources() => Path()
+    ..addOval(
+      Rect.fromCenter(center: const Offset(12, 6), width: 16, height: 6),
+    )
+    ..moveTo(4, 6)
+    ..lineTo(4, 18)
+    ..cubicTo(4, 19.7, 7.6, 21, 12, 21)
+    ..cubicTo(16.4, 21, 20, 19.7, 20, 18)
+    ..lineTo(20, 6)
+    ..moveTo(4, 12)
+    ..cubicTo(4, 13.7, 7.6, 15, 12, 15)
+    ..cubicTo(16.4, 15, 20, 13.7, 20, 12);
+
+  // <rect 3 4 18 7 rx2> <rect 3 13 18 7 rx2> M7 7.5h.01 M7 16.5h.01
+  static Path _servers() => Path()
+    ..addRRect(_r(3, 4, 18, 7, 2))
+    ..addRRect(_r(3, 13, 18, 7, 2))
+    ..moveTo(7, 7.5)
+    ..lineTo(7.01, 7.5)
+    ..moveTo(7, 16.5)
+    ..lineTo(7.01, 16.5);
+
+  // M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7  M10 20a2 2 0 0 0 4 0
+  static Path _alerts() => Path()
+    ..moveTo(6, 9)
+    ..arcToPoint(
+      const Offset(18, 9),
+      radius: const Radius.circular(6),
+      clockwise: true,
+    )
+    ..cubicTo(18, 15, 20, 16, 20, 16)
+    ..lineTo(4, 16)
+    ..cubicTo(4, 16, 6, 15, 6, 9)
+    ..moveTo(10, 20)
+    ..arcToPoint(
+      const Offset(14, 20),
+      radius: const Radius.circular(2),
+      clockwise: false,
+    );
+
+  // M4 6h10 M18 6h2 M4 12h4 M12 12h8 M4 18h12 + three knobs
+  static Path _settings() => Path()
+    ..moveTo(4, 6)
+    ..lineTo(14, 6)
+    ..moveTo(18, 6)
+    ..lineTo(20, 6)
+    ..moveTo(4, 12)
+    ..lineTo(8, 12)
+    ..moveTo(12, 12)
+    ..lineTo(20, 12)
+    ..moveTo(4, 18)
+    ..lineTo(16, 18)
+    ..addOval(Rect.fromCircle(center: const Offset(16, 6), radius: 2))
+    ..addOval(Rect.fromCircle(center: const Offset(10, 12), radius: 2))
+    ..addOval(Rect.fromCircle(center: const Offset(18, 18), radius: 2));
+
+  // M5 6h14 M5 12h14 M5 18h9
+  static Path _logWall() => Path()
+    ..moveTo(5, 6)
+    ..lineTo(19, 6)
+    ..moveTo(5, 12)
+    ..lineTo(19, 12)
+    ..moveTo(5, 18)
+    ..lineTo(14, 18);
+
+  /// The Preferences gear, transcribed from the `d` attribute the Main,
+  /// DesktopOverview and DesktopTablet boards all draw it with: twelve
+  /// rounded teeth built from `a2 2 0 0 …` arcs, and a circle in the middle.
+  static Path _cog() {
+    final _Pen p = _Pen(12.22, 2)
+      ..h(-0.44)
+      ..arc(-2, 2, clockwise: false)
+      ..dy(0.18)
+      ..arc(-1, 1.73, clockwise: true)
+      ..line(-0.43, 0.25)
+      ..arc(-2, 0, clockwise: true)
+      ..line(-0.15, -0.08)
+      ..arc(-2.73, 0.73, clockwise: false)
+      ..line(-0.22, 0.38)
+      ..arc(0.73, 2.73, clockwise: false)
+      ..line(0.15, 0.1)
+      ..arc(1, 1.72, clockwise: true)
+      ..dy(0.51)
+      ..arc(-1, 1.74, clockwise: true)
+      ..line(-0.15, 0.09)
+      ..arc(-0.73, 2.73, clockwise: false)
+      ..line(0.22, 0.38)
+      ..arc(2.73, 0.73, clockwise: false)
+      ..line(0.15, -0.08)
+      ..arc(2, 0, clockwise: true)
+      ..line(0.43, 0.25)
+      ..arc(1, 1.73, clockwise: true)
+      ..toY(20)
+      ..arc(2, 2, clockwise: false)
+      ..h(0.44)
+      ..arc(2, -2, clockwise: false)
+      ..dy(-0.18)
+      ..arc(1, -1.73, clockwise: true)
+      ..line(0.43, -0.25)
+      ..arc(2, 0, clockwise: true)
+      ..line(0.15, 0.08)
+      ..arc(2.73, -0.73, clockwise: false)
+      ..line(0.22, -0.39)
+      ..arc(-0.73, -2.73, clockwise: false)
+      ..line(-0.15, -0.08)
+      ..arc(-1, -1.74, clockwise: true)
+      ..dy(-0.5)
+      ..arc(1, -1.74, clockwise: true)
+      ..line(0.15, -0.09)
+      ..arc(0.73, -2.73, clockwise: false)
+      ..line(-0.22, -0.38)
+      ..arc(-2.73, -0.73, clockwise: false)
+      ..line(-0.15, 0.08)
+      ..arc(-2, 0, clockwise: true)
+      ..line(-0.43, -0.25)
+      ..arc(-1, -1.73, clockwise: true)
+      ..toY(4)
+      ..arc(-2, -2, clockwise: false)
+      ..shut();
+    return p.path
+      ..addOval(Rect.fromCircle(center: const Offset(12, 12), radius: 3));
+  }
+
+  // <circle 12 12 r4> + eight rays
+  static Path _sun() {
+    final Path path = Path()
+      ..addOval(Rect.fromCircle(center: const Offset(12, 12), radius: 4));
+    const List<(double, double, double, double)> rays =
+        <(double, double, double, double)>[
+          (12, 3, 12, 5),
+          (12, 19, 12, 21),
+          (3, 12, 5, 12),
+          (19, 12, 21, 12),
+          (5.6, 5.6, 7, 7),
+          (17, 17, 18.4, 18.4),
+          (18.4, 5.6, 17, 7),
+          (7, 17, 5.6, 18.4),
+        ];
+    for (final (double x1, double y1, double x2, double y2) in rays) {
+      path
+        ..moveTo(x1, y1)
+        ..lineTo(x2, y2);
+    }
+    return path;
+  }
+
+  // <rect 5 11 14 9 rx2> M8 11V8a4 4 0 0 1 8 0v3
+  static Path _lock() => Path()
+    ..addRRect(_r(5, 11, 14, 9, 2))
+    ..moveTo(8, 11)
+    ..lineTo(8, 8)
+    ..arcToPoint(
+      const Offset(16, 8),
+      radius: const Radius.circular(4),
+      clockwise: true,
+    )
+    ..lineTo(16, 11);
+
+  // M3 12h4l3-8 4 16 3-8h4
+  static Path _pulse() => Path()
+    ..moveTo(3, 12)
+    ..lineTo(7, 12)
+    ..lineTo(10, 4)
+    ..lineTo(14, 20)
+    ..lineTo(17, 12)
+    ..lineTo(21, 12);
+
+  // <circle 12 12 r9> M12 11v5 M12 8h.01
+  static Path _info() => Path()
+    ..addOval(Rect.fromCircle(center: const Offset(12, 12), radius: 9))
+    ..moveTo(12, 11)
+    ..lineTo(12, 16)
+    ..moveTo(12, 8)
+    ..lineTo(12.01, 8);
+
+  /// A plain right arrow on the same 24×24 grid as the rest.
+  static Path _arrowRight() => Path()
+    ..moveTo(3, 12)
+    ..lineTo(21, 12)
+    ..moveTo(14, 5)
+    ..lineTo(21, 12)
+    ..lineTo(14, 19);
+
+  /// The looped square of U+2318: an 8×8 centre with a loop through each of
+  /// its corners.
+  static Path _command() {
+    final Path path = Path()..addRect(const Rect.fromLTWH(8, 8, 8, 8));
+    const double r = 3.54; // reaches the square's corner from 2.5 px outside
+    for (final (double x, double y) in <(double, double)>[
+      (5.5, 5.5),
+      (18.5, 5.5),
+      (5.5, 18.5),
+      (18.5, 18.5),
+    ]) {
+      path.addOval(Rect.fromCircle(center: Offset(x, y), radius: r));
+    }
+    return path;
+  }
+
+  static RRect _r(double x, double y, double w, double h, double r) =>
+      RRect.fromRectAndRadius(Rect.fromLTWH(x, y, w, h), Radius.circular(r));
+}
+
+/// A pen that follows SVG path data, so a long `d` attribute can be copied
+/// across command by command.
+///
+/// [Path] has relative moves but never tells you where the pen is, which the
+/// cog's absolute `V20` and `V4` need. This keeps the current point, so both
+/// the relative commands and the absolute ones read like the markup.
+class _Pen {
+  _Pen(this.x, this.y) {
+    path.moveTo(x, y);
+  }
+
+  final Path path = Path();
+  double x;
+  double y;
+
+  /// `h dx`
+  void h(double dx) {
+    x += dx;
+    path.lineTo(x, y);
+  }
+
+  /// `v dy`
+  void dy(double value) {
+    y += value;
+    path.lineTo(x, y);
+  }
+
+  /// `V y`
+  void toY(double value) {
+    y = value;
+    path.lineTo(x, y);
+  }
+
+  /// `l dx dy`
+  void line(double dx, double dyValue) {
+    x += dx;
+    y += dyValue;
+    path.lineTo(x, y);
+  }
+
+  /// `a r r 0 0 sweep dx dy` — [clockwise] is the SVG sweep flag, which means
+  /// the same thing in Flutter's y-down space.
+  void arc(
+    double dx,
+    double dyValue, {
+    required bool clockwise,
+    double radius = 2,
+  }) {
+    x += dx;
+    y += dyValue;
+    path.arcToPoint(
+      Offset(x, y),
+      radius: Radius.circular(radius),
+      clockwise: clockwise,
+    );
+  }
+
+  /// `z`
+  void shut() => path.close();
+}

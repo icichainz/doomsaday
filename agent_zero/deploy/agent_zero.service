@@ -1,0 +1,72 @@
+[Unit]
+Description=agent_zero Docker host agent
+Documentation=https://example.invalid/agent_zero
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+
+# Create a dedicated user first:
+#   useradd --system --no-create-home --shell /usr/sbin/nologin agentzero
+#   usermod -aG docker agentzero
+#
+# The docker group is root equivalent. This unit is the boundary: the agent
+# never exposes the socket, it only exposes the endpoints in docs/agent-api.md.
+User=agentzero
+Group=agentzero
+SupplementaryGroups=docker
+
+Environment=AGENT_ZERO_LISTEN=:8443
+Environment=AGENT_ZERO_DATA_DIR=/var/lib/agent_zero
+Environment=AGENT_ZERO_STACKS_DIR=/opt/stacks
+Environment=AGENT_ZERO_LOG_LEVEL=info
+# Uncomment for a real certificate instead of the generated self-signed one.
+#Environment=AGENT_ZERO_TLS_CERT=/etc/agent_zero/fullchain.pem
+#Environment=AGENT_ZERO_TLS_KEY=/etc/agent_zero/privkey.pem
+
+ExecStart=/usr/local/bin/agent_zero serve
+ExecReload=/bin/kill -HUP $MAINPID
+
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+KillSignal=SIGTERM
+
+# State directory, created and chowned by systemd.
+StateDirectory=agent_zero
+StateDirectoryMode=0700
+
+# Hardening. The agent needs the Docker socket and, for compose, the stacks
+# directory; everything else is closed off.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+ReadWritePaths=/var/lib/agent_zero /opt/stacks
+ReadOnlyPaths=/etc/agent_zero
+
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target

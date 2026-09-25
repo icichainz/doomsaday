@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Alerts</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:#0E1417;color:#E8EEF0}
+a{color:#5BE3B0;text-decoration:none}a:hover{color:#8FF0CB}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 12px; background: #0E1417; color: #E8EEF0;">
+<a href="Dashboard.dc.html" style="display: flex; align-items: center; gap: 4px; height: 44px; align-self: flex-start; color: #9AAAB1; font-size: 15px;">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+<span>Overview</span>
+</a>
+
+<header style="display: flex; flex-direction: column; gap: 2px;">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: -0.5px;">Alerts</h1>
+<div style="font-size: 13px; color: #9AAAB1;">2 active on prod-eu-1 · sent as push notifications</div>
+</header>
+
+<article style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 18px; background: #161E22; border: 1px solid #4A2521;">
+<div style="display: flex; align-items: center; gap: 12px;">
+<div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #3A1C19; color: #FF8A7D;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17.5h.01"></path></svg></div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600;">postgres-backup exited</h2>
+<div style="font-size: 12px; color: #9AAAB1;">Exit code 1 · 12 min ago · stack backups</div>
+</div>
+<span style="flex-shrink: 0; padding: 4px 10px; border-radius: 999px; background: #3A1C19; color: #FF8A7D; font-size: 12px; font-weight: 600;">Critical</span>
+</div>
+<div style="display: flex; gap: 8px;">
+<a href="Logs.dc.html" style="flex: 1 1 0; display: flex; align-items: center; justify-content: center; height: 44px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; border: 1px solid #3A4A52; color: #E8EEF0; font-size: 14px; font-weight: 600;">View logs</a>
+<button type="button" style="flex: 1 1 0; height: 44px; padding: 0 14px; border-radius: 12px; background: transparent; border: 1px solid #3A4A52; color: #E8EEF0; font-size: 14px; font-weight: 600;">Restart</button>
+<button type="button" style="height: 44px; padding: 0 14px; border-radius: 12px; background: transparent; border: 1px solid #3A4A52; color: #E8EEF0; font-size: 14px; font-weight: 600;">Mute 1 h</button>
+</div>
+</article>
+
+<article style="display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 18px; background: #161E22; border: 1px solid #4A3B17;">
+<div style="display: flex; align-items: center; gap: 12px;">
+<div style="flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background: #33290F; color: #F2B45A;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"></path><path d="M12 10v4M12 17.5h.01"></path></svg></div>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<h2 style="margin: 0; font-size: 15px; font-weight: 600;">worker-queue restart loop</h2>
+<div style="font-size: 12px; color: #9AAAB1;">4 restarts in 10 min · stack web-platform</div>
+</div>
+<span style="flex-shrink: 0; padding: 4px 10px; border-radius: 999px; background: #33290F; color: #F2B45A; font-size: 12px; font-weight: 600;">Warning</span>
+</div>
+<div style="display: flex; gap: 8px;">
+<a href="ContainerDetail.dc.html" style="flex: 1 1 0; display: flex; align-items: center; justify-content: center; height: 44px; box-sizing: border-box; padding: 0 14px; border-radius: 12px; border: 1px solid #3A4A52; color: #E8EEF0; font-size: 14px; font-weight: 600;">Open container</a>
+<button type="button" style="height: 44px; padding: 0 14px; border-radius: 12px; background: transparent; border: 1px solid #3A4A52; color: #E8EEF0; font-size: 14px; font-weight: 600;">Mute 1 h</button>
+</div>
+</article>
+
+<div style="display: flex; align-items: center; gap: 12px; min-height: 48px; box-sizing: border-box; padding: 8px 14px; border-radius: 16px; border: 1px solid #243036;">
+<div style="flex-shrink: 0; color: #5BE3B0;">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg>
+</div>
+<div style="flex-grow: 1; font-size: 13px; color: #9AAAB1;">Disk above 80% on staging-1 · resolved Tue 14:10</div>
+</div>
+
+<section style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+<h2 style="margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #9AAAB1;">Rules checked by the agent</h2>
+<div style="display: flex; flex-direction: column; border-radius: 18px; background: #161E22; border: 1px solid #243036; padding: 0 16px;">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 0; box-sizing: border-box; border-bottom: 1px solid #243036;">
+<label for="rule-1" style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px;"><span>Container exits unexpectedly</span></label>
+<button id="rule-1" type="button" role="switch" aria-checked="true" style="flex-shrink: 0; position: relative; width: 46px; height: 28px; padding: 0; border-radius: 14px; border: 0; background: {{accent}};"><span style="position: absolute; top: 3px; left: 21px; width: 22px; height: 22px; border-radius: 11px; background: #0E1417;"></span></button>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 0; box-sizing: border-box; border-bottom: 1px solid #243036;">
+<label for="rule-2" style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px;"><span>Restart loop, 3 or more in 10 min</span></label>
+<button id="rule-2" type="button" role="switch" aria-checked="true" style="flex-shrink: 0; position: relative; width: 46px; height: 28px; padding: 0; border-radius: 14px; border: 0; background: {{accent}};"><span style="position: absolute; top: 3px; left: 21px; width: 22px; height: 22px; border-radius: 11px; background: #0E1417;"></span></button>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 0; box-sizing: border-box; border-bottom: 1px solid #243036;">
+<label for="rule-3" style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px;"><span>CPU or memory above 90% for 5 min</span></label>
+<button id="rule-3" type="button" role="switch" aria-checked="true" style="flex-shrink: 0; position: relative; width: 46px; height: 28px; padding: 0; border-radius: 14px; border: 0; background: {{accent}};"><span style="position: absolute; top: 3px; left: 21px; width: 22px; height: 22px; border-radius: 11px; background: #0E1417;"></span></button>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 0; box-sizing: border-box;">
+<label for="rule-4" style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px;"><span>Agent unreachable for 2 min</span><span style="font-size: 12px; line-height: 1.35; color: #9AAAB1;">Needs the push relay. The agent cannot notice that it is down itself.</span></label>
+<button id="rule-4" type="button" role="switch" aria-checked="false" style="flex-shrink: 0; position: relative; width: 46px; height: 28px; padding: 0; border-radius: 14px; border: 0; background: #2A363C;"><span style="position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 11px; background: #9AAAB1;"></span></button>
+</div>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#5BE3B0","options":["#5BE3B0","#6CB8FF","#F2B45A"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#5BE3B0' };
+}
+}
+</script>
+</body>
+</html>

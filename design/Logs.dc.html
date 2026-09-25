@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Container logs</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:#0E1417;color:#E8EEF0}
+a{color:#5BE3B0;text-decoration:none}a:hover{color:#8FF0CB}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 20px 16px 20px; display: flex; flex-direction: column; gap: 14px; background: #0E1417; color: #E8EEF0;">
+<header style="display: flex; align-items: center; gap: 8px;">
+<a href="ContainerDetail.dc.html" aria-label="Back to api-gateway" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #9AAAB1;">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+</a>
+<div style="flex-grow: 1; display: flex; flex-direction: column; gap: 1px;">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: -0.3px;">Logs</h1>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AAAB1;">api-gateway</div>
+</div>
+<span style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: #15302A; color: #5BE3B0; font-size: 12px; font-weight: 600;">
+<span style="width: 7px; height: 7px; border-radius: 4px; background: #5BE3B0;"></span>
+<span>Live</span>
+</span>
+</header>
+
+<div style="display: flex; gap: 8px;">
+<div style="flex-grow: 1; display: flex; align-items: center; gap: 8px; height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; background: #161E22; border: 1px solid #243036; color: #9AAAB1;">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+<label for="log-filter" style="position: absolute; width: 1px; height: 1px; overflow: hidden;">Filter log lines</label>
+<input id="log-filter" type="search" placeholder="Filter lines" style="flex-grow: 1; min-width: 0; height: 40px; background: transparent; border: 0; outline: none; color: #E8EEF0; font-size: 14px;">
+</div>
+<button type="button" style="height: 44px; padding: 0 14px; border-radius: 12px; background: #161E22; border: 1px solid #243036; color: #E8EEF0; font-size: 13px; font-weight: 600;">Last 15 min</button>
+</div>
+
+<div style="flex-grow: 1; box-sizing: border-box; padding: 12px; border-radius: 16px; background: #0A0F11; border: 1px solid #1E282D; display: flex; flex-direction: column; gap: 7px; overflow: hidden;">
+<sc-for list="{{lines}}" as="line" hint-placeholder-count="14">
+<div style="display: flex; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; line-height: 1.45;">
+<span style="flex-shrink: 0; color: #7E9099;">{{line.t}}</span>
+<span style="flex-shrink: 0; width: 34px; font-weight: 500; color: {{line.color}};">{{line.lvl}}</span>
+<span style="min-width: 0; color: #C9D6DB; word-break: break-word;">{{line.msg}}</span>
+</div>
+</sc-for>
+</div>
+
+<div style="display: flex; align-items: center; gap: 8px;">
+<div style="flex-grow: 1; font-size: 13px; color: #9AAAB1;">Following · 1,204 lines</div>
+<button type="button" style="display: flex; align-items: center; gap: 6px; height: 48px; padding: 0 16px; border-radius: 14px; background: #161E22; border: 1px solid #243036; color: #E8EEF0; font-size: 14px; font-weight: 600;">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14M16 5v14"></path></svg>
+<span>Pause</span>
+</button>
+<button type="button" aria-label="Download logs" style="width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: {{accent}}; border: 0; color: #0E1417;">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M7 11l5 5 5-5M5 20h14"></path></svg>
+</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#5BE3B0","options":["#5BE3B0","#6CB8FF","#F2B45A"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+var I = '#6CB8FF', W = '#F2B45A', E = '#FF8A7D';
+var lines = [
+{ t: '09:41:52', lvl: 'INFO', color: I, msg: 'GET /v1/orders 200 18ms' },
+{ t: '09:41:53', lvl: 'INFO', color: I, msg: 'GET /v1/orders/8812 200 11ms' },
+{ t: '09:41:55', lvl: 'INFO', color: I, msg: 'POST /v1/checkout 201 142ms' },
+{ t: '09:41:58', lvl: 'WARN', color: W, msg: 'upstream worker-queue slow: 2140ms' },
+{ t: '09:42:01', lvl: 'INFO', color: I, msg: 'GET /healthz 200 1ms' },
+{ t: '09:42:03', lvl: 'ERR', color: E, msg: 'dial tcp worker-queue:7000: connection refused' },
+{ t: '09:42:03', lvl: 'WARN', color: W, msg: 'retrying job enqueue (attempt 2 of 5)' },
+{ t: '09:42:05', lvl: 'INFO', color: I, msg: 'job enqueue ok after retry' },
+{ t: '09:42:07', lvl: 'INFO', color: I, msg: 'GET /v1/products?page=2 200 23ms' },
+{ t: '09:42:09', lvl: 'INFO', color: I, msg: 'GET /v1/cart 200 9ms' },
+{ t: '09:42:11', lvl: 'INFO', color: I, msg: 'GET /healthz 200 1ms' },
+{ t: '09:42:14', lvl: 'WARN', color: W, msg: 'rate limit near threshold for key pk_live_…4e1' },
+{ t: '09:42:16', lvl: 'INFO', color: I, msg: 'PUT /v1/cart/items/3 200 31ms' },
+{ t: '09:42:18', lvl: 'INFO', color: I, msg: 'GET /v1/orders 200 16ms' }
+];
+return { accent: this.props.accent ?? '#5BE3B0', lines: lines };
+}
+}
+</script>
+</body>
+</html>

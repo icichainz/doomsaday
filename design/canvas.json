@@ -1,0 +1,697 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Alerts.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "4 · Alerts and rules",
+      "w": 390,
+      "x": 1410,
+      "y": 0
+    },
+    "AlertsLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "4 · Alerts and rules",
+      "w": 390,
+      "x": 1410,
+      "y": 0
+    },
+    "ConfirmStop.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "7 · Confirm a risky action",
+      "w": 390,
+      "x": 940,
+      "y": 1244
+    },
+    "ConfirmStopLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "7 · Confirm a risky action",
+      "w": 390,
+      "x": 940,
+      "y": 1244
+    },
+    "ContainerDetail.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "6 · Container detail",
+      "w": 390,
+      "x": 470,
+      "y": 1244
+    },
+    "ContainerDetailLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "6 · Container detail",
+      "w": 390,
+      "x": 470,
+      "y": 1244
+    },
+    "Containers.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "5 · Containers",
+      "w": 390,
+      "x": 0,
+      "y": 1244
+    },
+    "ContainersLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "5 · Containers",
+      "w": 390,
+      "x": 0,
+      "y": 1244
+    },
+    "Dashboard.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "3 · Server overview",
+      "w": 390,
+      "x": 940,
+      "y": 0
+    },
+    "DashboardLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "3 · Server overview",
+      "w": 390,
+      "x": 940,
+      "y": 0
+    },
+    "DesktopConfirm.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop",
+      "title": "D3 · Confirm by typing the name",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
+    "DesktopConfirmLight.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop-light",
+      "title": "D3 · Confirm by typing the name",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
+    "DesktopContainers.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop",
+      "title": "D2 · Containers with detail and logs",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "DesktopContainersLight.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop-light",
+      "title": "D2 · Containers with detail and logs",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "DesktopFleet.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop",
+      "title": "D5 · All servers",
+      "w": 1440,
+      "x": 1520,
+      "y": 1300
+    },
+    "DesktopFleetLight.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop-light",
+      "title": "D5 · All servers",
+      "w": 1440,
+      "x": 1520,
+      "y": 1300
+    },
+    "DesktopLogWall.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop",
+      "title": "D6 · Log wall",
+      "w": 1440,
+      "x": 3040,
+      "y": 1300
+    },
+    "DesktopLogWallLight.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop-light",
+      "title": "D6 · Log wall",
+      "w": 1440,
+      "x": 3040,
+      "y": 1300
+    },
+    "DesktopOverview.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop",
+      "title": "D1 · Overview",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "DesktopOverviewLight.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop-light",
+      "title": "D1 · Overview",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "DesktopResources.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop",
+      "title": "D4 · Images as a table",
+      "w": 1440,
+      "x": 0,
+      "y": 1300
+    },
+    "DesktopResourcesLight.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "page": "desktop-light",
+      "title": "D4 · Images as a table",
+      "w": 1440,
+      "x": 0,
+      "y": 1300
+    },
+    "DesktopTablet.dc.html": {
+      "h": 1194,
+      "page": "desktop",
+      "title": "T1 · Tablet: rail and two columns",
+      "w": 834,
+      "x": 4560,
+      "y": 0
+    },
+    "DesktopTabletLight.dc.html": {
+      "h": 1194,
+      "page": "desktop-light",
+      "title": "T1 · Tablet: rail and two columns",
+      "w": 834,
+      "x": 4560,
+      "y": 0
+    },
+    "IconFree.dc.html": {
+      "h": 640,
+      "page": "icons",
+      "title": "Free · current icon",
+      "w": 560,
+      "x": 0,
+      "y": 0
+    },
+    "IconProDark.dc.html": {
+      "h": 640,
+      "page": "icons",
+      "title": "Pro B · bright red, dark mark",
+      "w": 560,
+      "x": 1280,
+      "y": 0
+    },
+    "IconProIvory.dc.html": {
+      "h": 640,
+      "page": "icons",
+      "title": "Pro A · deep red, ivory mark",
+      "w": 560,
+      "x": 640,
+      "y": 0
+    },
+    "IconProMint.dc.html": {
+      "h": 640,
+      "page": "icons",
+      "title": "Pro C · red with the mint mark kept",
+      "w": 560,
+      "x": 1920,
+      "y": 0
+    },
+    "IconSizes.dc.html": {
+      "h": 300,
+      "page": "icons",
+      "title": "At real sizes: 64 px and 32 px, on dark and light",
+      "w": 1320,
+      "x": 0,
+      "y": 760
+    },
+    "Images.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "11 · Images",
+      "w": 390,
+      "x": 940,
+      "y": 2488
+    },
+    "ImagesLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "11 · Images",
+      "w": 390,
+      "x": 940,
+      "y": 2488
+    },
+    "Logs.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "8 · Live logs",
+      "w": 390,
+      "x": 1410,
+      "y": 1244
+    },
+    "LogsLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "8 · Live logs",
+      "w": 390,
+      "x": 1410,
+      "y": 1244
+    },
+    "Main.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "1 · Servers",
+      "w": 390,
+      "x": 0,
+      "y": 0
+    },
+    "MainLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "1 · Servers",
+      "w": 390,
+      "x": 0,
+      "y": 0
+    },
+    "Networks.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "13 · Networks",
+      "w": 390,
+      "x": 1880,
+      "y": 2488
+    },
+    "NetworksLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "13 · Networks",
+      "w": 390,
+      "x": 1880,
+      "y": 2488
+    },
+    "PairAgent.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "2 · Pair an agent",
+      "w": 390,
+      "x": 470,
+      "y": 0
+    },
+    "PairAgentLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "2 · Pair an agent",
+      "w": 390,
+      "x": 470,
+      "y": 0
+    },
+    "Registries.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "15 · Registry credentials",
+      "w": 390,
+      "x": 470,
+      "y": 3732
+    },
+    "RegistriesLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "15 · Registry credentials",
+      "w": 390,
+      "x": 470,
+      "y": 3732
+    },
+    "ServerSettings.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "14 · Server settings",
+      "w": 390,
+      "x": 0,
+      "y": 3732
+    },
+    "ServerSettingsLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "14 · Server settings",
+      "w": 390,
+      "x": 0,
+      "y": 3732
+    },
+    "Services.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "10 · Swarm services",
+      "w": 390,
+      "x": 470,
+      "y": 2488
+    },
+    "ServicesLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "10 · Swarm services",
+      "w": 390,
+      "x": 470,
+      "y": 2488
+    },
+    "Stacks.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "9 · Compose stacks",
+      "w": 390,
+      "x": 0,
+      "y": 2488
+    },
+    "StacksLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "9 · Compose stacks",
+      "w": 390,
+      "x": 0,
+      "y": 2488
+    },
+    "Volumes.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "12 · Volumes",
+      "w": 390,
+      "x": 1410,
+      "y": 2488
+    },
+    "VolumesLight.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "light",
+      "title": "12 · Volumes",
+      "w": 390,
+      "x": 1410,
+      "y": 2488
+    },
+    "ProLocked.dc.html": {
+      "x": 0,
+      "y": 1500,
+      "w": 1440,
+      "h": 900,
+      "title": "P1 · Free build: a locked Pro feature",
+      "page": "icons"
+    },
+    "ProLimit.dc.html": {
+      "x": 1520,
+      "y": 1500,
+      "w": 390,
+      "h": 844,
+      "title": "P2 · Free build: third server",
+      "page": "icons"
+    },
+    "ProBrand.dc.html": {
+      "x": 1990,
+      "y": 1500,
+      "w": 264,
+      "h": 150,
+      "title": "P3 · Pro build: brand in the sidebar",
+      "page": "icons"
+    },
+    "AppSettings.dc.html": {
+      "x": 940,
+      "y": 3732,
+      "w": 390,
+      "h": 1320,
+      "title": "16 · App preferences",
+      "is_interactive": true
+    },
+    "AppSettingsLight.dc.html": {
+      "x": 940,
+      "y": 3732,
+      "w": 390,
+      "h": 1320,
+      "title": "16 · App preferences",
+      "is_interactive": true,
+      "page": "light"
+    },
+    "DesktopPreferences.dc.html": {
+      "x": 4560,
+      "y": 1300,
+      "w": 1440,
+      "h": 900,
+      "title": "D7 · Preferences dialog",
+      "is_interactive": true,
+      "page": "desktop"
+    },
+    "DesktopPreferencesLight.dc.html": {
+      "x": 4560,
+      "y": 1300,
+      "w": 1440,
+      "h": 900,
+      "title": "D7 · Preferences dialog",
+      "is_interactive": true,
+      "page": "desktop-light"
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-09-19T12:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "desk1": {
+      "kind": "title1",
+      "maxW": 4480,
+      "page": "desktop",
+      "text": "One server on a Mac: sidebar, split view, typed confirmation",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "desk1light": {
+      "kind": "title1",
+      "maxW": 4480,
+      "page": "desktop-light",
+      "text": "One server on a Mac: sidebar, split view, typed confirmation · light",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "desk2": {
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "desktop",
+      "text": "Desktop extras: tables, all servers, log wall",
+      "w": 240,
+      "x": 0,
+      "y": 1000
+    },
+    "desk2light": {
+      "kind": "title1",
+      "maxW": 6000,
+      "page": "desktop-light",
+      "text": "Desktop extras: tables, all servers, log wall · light",
+      "w": 240,
+      "x": 0,
+      "y": 1000
+    },
+    "icons1": {
+      "kind": "title1",
+      "maxW": 2480,
+      "page": "icons",
+      "text": "Free and Pro app icons",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "row1": {
+      "kind": "title1",
+      "maxW": 1800,
+      "text": "Connect and monitor",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "row1light": {
+      "kind": "title1",
+      "maxW": 1800,
+      "page": "light",
+      "text": "Connect and monitor · light theme",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "row2": {
+      "kind": "title1",
+      "maxW": 1800,
+      "text": "Operate containers",
+      "w": 240,
+      "x": 0,
+      "y": 944
+    },
+    "row2light": {
+      "kind": "title1",
+      "maxW": 1800,
+      "page": "light",
+      "text": "Operate containers · light theme",
+      "w": 240,
+      "x": 0,
+      "y": 944
+    },
+    "row3": {
+      "kind": "title1",
+      "maxW": 2270,
+      "text": "Stacks, Swarm services and resources",
+      "w": 240,
+      "x": 0,
+      "y": 2188
+    },
+    "row3light": {
+      "kind": "title1",
+      "maxW": 2270,
+      "page": "light",
+      "text": "Stacks, Swarm services and resources · light theme",
+      "w": 240,
+      "x": 0,
+      "y": 2188
+    },
+    "row4": {
+      "kind": "title1",
+      "maxW": 1330,
+      "text": "Server settings, access and app preferences",
+      "w": 240,
+      "x": 0,
+      "y": 3432
+    },
+    "row4light": {
+      "kind": "title1",
+      "maxW": 1330,
+      "page": "light",
+      "text": "Server settings, access and app preferences · light theme",
+      "w": 240,
+      "x": 0,
+      "y": 3432
+    },
+    "icons2": {
+      "kind": "title1",
+      "x": 0,
+      "y": 1200,
+      "w": 240,
+      "maxW": 2254,
+      "text": "How Free shows what Pro adds",
+      "page": "icons"
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "PairAgent.dc.html",
+    "Dashboard.dc.html",
+    "Alerts.dc.html",
+    "Containers.dc.html",
+    "ContainerDetail.dc.html",
+    "ConfirmStop.dc.html",
+    "Logs.dc.html",
+    "Stacks.dc.html",
+    "Services.dc.html",
+    "Images.dc.html",
+    "Volumes.dc.html",
+    "Networks.dc.html",
+    "ServerSettings.dc.html",
+    "Registries.dc.html",
+    "MainLight.dc.html",
+    "PairAgentLight.dc.html",
+    "DashboardLight.dc.html",
+    "AlertsLight.dc.html",
+    "ContainersLight.dc.html",
+    "ContainerDetailLight.dc.html",
+    "ConfirmStopLight.dc.html",
+    "LogsLight.dc.html",
+    "StacksLight.dc.html",
+    "ServicesLight.dc.html",
+    "ImagesLight.dc.html",
+    "VolumesLight.dc.html",
+    "NetworksLight.dc.html",
+    "ServerSettingsLight.dc.html",
+    "RegistriesLight.dc.html",
+    "DesktopOverview.dc.html",
+    "DesktopContainers.dc.html",
+    "DesktopConfirm.dc.html",
+    "DesktopResources.dc.html",
+    "DesktopFleet.dc.html",
+    "DesktopLogWall.dc.html",
+    "DesktopTablet.dc.html",
+    "DesktopOverviewLight.dc.html",
+    "DesktopContainersLight.dc.html",
+    "DesktopConfirmLight.dc.html",
+    "DesktopResourcesLight.dc.html",
+    "DesktopFleetLight.dc.html",
+    "DesktopLogWallLight.dc.html",
+    "DesktopTabletLight.dc.html",
+    "IconFree.dc.html",
+    "IconProIvory.dc.html",
+    "IconProDark.dc.html",
+    "IconProMint.dc.html",
+    "IconSizes.dc.html",
+    "ProLocked.dc.html",
+    "ProLimit.dc.html",
+    "ProBrand.dc.html",
+    "AppSettings.dc.html",
+    "AppSettingsLight.dc.html",
+    "DesktopPreferences.dc.html",
+    "DesktopPreferencesLight.dc.html"
+  ],
+  "pages": [
+    {
+      "id": "dark",
+      "name": "Dark theme"
+    },
+    {
+      "id": "light",
+      "name": "Light theme"
+    },
+    {
+      "id": "desktop",
+      "name": "Desktop and tablet"
+    },
+    {
+      "id": "desktop-light",
+      "name": "Desktop and tablet, light"
+    },
+    {
+      "id": "icons",
+      "name": "App icons and Pro"
+    }
+  ],
+  "title": "Docker Manager Mobile App"
+}

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Confirm stop, light theme</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:#F3F5F4;color:#15201E}
+a{color:#0B7A5C;text-decoration:none}a:hover{color:#075E46}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #F3F5F4; color: #15201E; font-family: 'IBM Plex Sans', sans-serif;">
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 390px; height: 844px;">
+<dc-import name="ContainerDetailLight" accent="{{accent}}" hint-size="390px,844px"></dc-import>
+</div>
+<div style="position: absolute; left: 0; top: 0; width: 390px; height: 844px; background: rgba(21, 32, 30, 0.45);"></div>
+
+<section role="dialog" aria-modal="true" aria-labelledby="cs-title" style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 16px; border-radius: 28px 28px 0 0; background: #FFFFFF; border-top: 1px solid #CFD8D6;">
+<div aria-hidden="true" style="align-self: center; width: 40px; height: 4px; border-radius: 2px; background: #B5C2BF;"></div>
+
+<div style="display: flex; align-items: center; gap: 14px;">
+<div style="flex-shrink: 0; width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: #FCE1DD; color: #B3261E;">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"></rect></svg>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px;">
+<h1 id="cs-title" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.3px;">Stop api-gateway?</h1>
+<div style="font-size: 13px; color: #55656B;">prod-eu-1 · web-platform</div>
+</div>
+</div>
+
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #2B3A3F;">The container gets SIGTERM, then SIGKILL after 10 s. Port 8080 stops answering, and 2 containers in web-platform depend on it.</p>
+
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 14px; background: #E9EEEC; border: 1px solid #DCE3E1;">
+<div style="font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #55656B;">Request sent to the agent</div>
+<code style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.5; color: #2B3A3F; word-break: break-all;">POST /v1/containers/4f2a9c1e7b3d/stop?timeout=10</code>
+</div>
+
+<div style="display: flex; align-items: center; gap: 12px; min-height: 44px;">
+<label for="cs-bio" style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px; font-size: 14px; line-height: 1.4;"><span>Confirm with fingerprint</span><span style="font-size: 12px; color: #55656B;">This agent requires it for risky actions</span></label>
+<button id="cs-bio" type="button" role="switch" aria-checked="true" style="flex-shrink: 0; position: relative; width: 46px; height: 28px; padding: 0; border-radius: 14px; border: 0; background: {{accent}};"><span style="position: absolute; top: 3px; left: 21px; width: 22px; height: 22px; border-radius: 11px; background: #F3F5F4;"></span></button>
+</div>
+
+<div style="display: flex; gap: 10px;">
+<a href="ContainerDetailLight.dc.html" style="flex: 1 1 0; display: flex; align-items: center; justify-content: center; height: 54px; box-sizing: border-box; border-radius: 16px; border: 1px solid #B5C2BF; color: #15201E; font-size: 16px; font-weight: 600;">Cancel</a>
+<button type="button" style="flex: 1 1 0; height: 54px; border-radius: 16px; background: #B3261E; border: 0; color: #FFFFFF; font-size: 16px; font-weight: 600;">Stop container</button>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0B7A5C","options":["#0B7A5C","#1F5FBF","#8A5200"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#0B7A5C' };
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Flutter / Dart
+app/.dart_tool/
+app/build/
+app/.flutter-plugins*
+app/ios/Pods/
+app/ios/.symlinks/
+app/macos/Pods/
+app/**/xcuserdata/
+app/**/*.iml
+# Go
+agent_zero/bin/
+agent_zero/.devdata/
+# Outputs and regenerated review images
+dist/
+review/design/
+review/app/
+review/pairs/
+review/real/
+# Tools
+.idea/
+.worktrees/
+.DS_Store

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<!-- Outgoing connections to the agent over pinned HTTPS. -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+	<!-- flutter_secure_storage stores the device key here, never in prefs. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)dev.doomsaday.doomsaday</string>
+	</array>
+</dict>
+</plist>

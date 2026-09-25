@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Used only by tool/build_dmg.sh for a locally signed ("sign to run
+	     locally") release build. It leaves out keychain-access-groups, which
+	     needs a development team and a provisioning profile; without it the
+	     app cannot store a device key, so pairing reports that secure storage
+	     is unavailable. Release.entitlements stays the real release set. -->
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+</dict>
+</plist>

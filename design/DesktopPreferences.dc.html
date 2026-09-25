@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Desktop preferences</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:#0E1417;color:#E8EEF0}
+a{color:#5BE3B0;text-decoration:none}a:hover{color:#8FF0CB}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #0E1417; color: #E8EEF0; font-family: 'IBM Plex Sans', sans-serif;">
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px;"><dc-import name="DesktopOverview" accent="{{accent}}" hint-size="1440px,900px"></dc-import></div>
+<div style="position: absolute; left: 0; top: 0; width: 1440px; height: 900px; background: rgba(4, 7, 9, 0.72);"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="pd-title" style="position: absolute; left: 380px; top: 170px; width: 680px; height: 520px; box-sizing: border-box; display: flex; border-radius: 20px; background: #161E22; border: 1px solid #2A363C; overflow: hidden;">
+<nav aria-label="Preference sections" style="flex-shrink: 0; width: 200px; box-sizing: border-box; padding: 20px 10px; display: flex; flex-direction: column; gap: 2px; background: #121A1E; border-right: 1px solid #243036;">
+<h1 id="pd-title" style="margin: 0 0 12px; padding: 0 10px; font-family: 'Bricolage Grotesque', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -0.3px;">Preferences</h1>
+<button type="button" aria-pressed="true" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 10px; border: 0; background: #1A2429; color: {{accent}}; font-weight: 600; font-size: 13.5px; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.600 5.600l1.400 1.400M17 17l1.400 1.400M18.400 5.600L17 7M7 17l-1.400 1.400"></path></svg><span>Appearance</span></button>
+<button type="button" aria-pressed="false" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 10px; border: 0; background: transparent; color: #C9D6DB; font-weight: 500; font-size: 13.5px; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg><span>Security</span></button>
+<button type="button" aria-pressed="false" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 10px; border: 0; background: transparent; color: #C9D6DB; font-weight: 500; font-size: 13.5px; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"></path></svg><span>Live data</span></button>
+<button type="button" aria-pressed="false" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 10px; border: 0; background: transparent; color: #C9D6DB; font-weight: 500; font-size: 13.5px; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg><span>General</span></button>
+<button type="button" aria-pressed="false" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 10px; border-radius: 10px; border: 0; background: transparent; color: #C9D6DB; font-weight: 500; font-size: 13.5px; text-align: left;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path></svg><span>About</span></button>
+<div style="flex-grow: 1;"></div>
+<div style="padding: 0 10px; font-size: 12px; color: #9AAAB1;">Opens with <span style="font-family: 'IBM Plex Mono', monospace;">⌘,</span></div>
+</nav>
+<div style="flex: 1 1 0; min-width: 0; box-sizing: border-box; padding: 24px 26px; display: flex; flex-direction: column; gap: 20px;">
+<div style="display: flex; align-items: center;"><h2 style="flex-grow: 1; margin: 0; font-size: 17px; font-weight: 600;">Appearance</h2><a href="DesktopOverview.dc.html" aria-label="Close preferences" style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 32px; width: 32px; box-sizing: border-box; padding: 0; flex-shrink: 0; border-radius: 10px; background: transparent; border: 1px solid transparent; color: #9AAAB1; font-size: 13px; font-weight: 600; white-space: nowrap;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></a></div>
+<div style="display: flex; flex-direction: column; gap: 8px;"><div style="font-size: 14px; font-weight: 500;">Theme</div><div role="group" aria-label="Theme" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: #0E1417; border: 1px solid #243036;">
+<button type="button" aria-pressed="true" style="height: 32px; border-radius: 8px; border: 0; background: #2A363C; color: #E8EEF0; font-size: 13px; font-weight: 600;">System</button>
+<button type="button" aria-pressed="false" style="height: 32px; border-radius: 8px; border: 0; background: transparent; color: #9AAAB1; font-size: 13px; font-weight: 600;">Light</button>
+<button type="button" aria-pressed="false" style="height: 32px; border-radius: 8px; border: 0; background: transparent; color: #9AAAB1; font-size: 13px; font-weight: 600;">Dark</button>
+</div><div style="font-size: 12px; line-height: 1.4; color: #9AAAB1;">System follows macOS and switches with it.</div></div>
+<div style="display: flex; flex-direction: column; gap: 8px;"><div style="font-size: 14px; font-weight: 500;">Density</div><div role="group" aria-label="Density" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: #0E1417; border: 1px solid #243036;">
+<button type="button" aria-pressed="true" style="height: 32px; border-radius: 8px; border: 0; background: #2A363C; color: #E8EEF0; font-size: 13px; font-weight: 600;">Automatic</button>
+<button type="button" aria-pressed="false" style="height: 32px; border-radius: 8px; border: 0; background: transparent; color: #9AAAB1; font-size: 13px; font-weight: 600;">Comfortable</button>
+<button type="button" aria-pressed="false" style="height: 32px; border-radius: 8px; border: 0; background: transparent; color: #9AAAB1; font-size: 13px; font-weight: 600;">Compact</button>
+</div><div style="font-size: 12px; line-height: 1.4; color: #9AAAB1;">Automatic is compact with a mouse or trackpad and comfortable with touch.</div></div>
+<div style="flex-grow: 1;"></div>
+<div style="font-size: 12.5px; color: #9AAAB1;">Preferences apply to this app on this Mac, across every server. Settings of one server, such as alert rules and paired devices, are under that server in the sidebar.</div>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#5BE3B0","options":["#5BE3B0","#6CB8FF","#F2B45A"]},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#5BE3B0' };
+}
+}
+</script>
+</body>
+</html>
