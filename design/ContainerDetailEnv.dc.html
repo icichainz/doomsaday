@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Container environment and volumes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:#0E1417;color:#E8EEF0}
+a{color:#5BE3B0;text-decoration:none}a:hover{color:#8FF0CB}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #0E1417; color: #E8EEF0; font-family: 'IBM Plex Sans', sans-serif;">
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 390px; height: 844px;">
+<dc-import name="ContainerDetail" accent="{{accent}}" hint-size="390px,844px"></dc-import>
+</div>
+<div style="position: absolute; left: 0; top: 0; width: 390px; height: 844px; background: rgba(4, 7, 9, 0.72);"></div>
+
+<section role="dialog" aria-modal="true" aria-labelledby="env-title" style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 20px 24px; display: flex; flex-direction: column; gap: 14px; border-radius: 28px 28px 0 0; background: #161E22; border-top: 1px solid #2A363C;">
+<div aria-hidden="true" style="align-self: center; width: 40px; height: 4px; border-radius: 2px; background: #3A4A52;"></div>
+
+<header style="display: flex; flex-direction: column; gap: 2px;">
+<h1 id="env-title" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.3px;">Environment</h1>
+<div style="font-size: 13px; color: #9AAAB1;">api-gateway · Reveal and Copy are admin only and audited</div>
+</header>
+
+<section aria-labelledby="env-vars" style="display: flex; flex-direction: column; gap: 8px;">
+<h2 id="env-vars" style="margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #9AAAB1;">12 variables · values hidden</h2>
+<ul style="margin: 0; padding: 0 4px 0 14px; list-style: none; display: flex; flex-direction: column; border-radius: 16px; border: 1px solid #243036;">
+<sc-for list="{{vars}}" as="v" hint-placeholder-count="12">
+<li style="display: flex; flex-direction: column; justify-content: center; min-height: 40px; border-bottom: 1px solid {{v.divider}};">
+<div style="display: flex; align-items: center; gap: 6px; min-height: 40px;">
+<span style="flex-grow: 1; min-width: 0; font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{v.name}}</span>
+<sc-if value="{{v.hidden}}" hint-placeholder-val="{{ true }}">
+<span aria-label="Value hidden" style="flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; font-size: 13px; letter-spacing: 1px; color: #9AAAB1;">••••••</span>
+</sc-if>
+<button type="button" aria-label="{{v.toggleLabel}}" style="flex-shrink: 0; height: 32px; padding: 0 8px; border-radius: 8px; background: transparent; border: 0; color: {{accent}}; font-size: 13px; font-weight: 600;">{{v.toggle}}</button>
+<button type="button" aria-label="{{v.copyLabel}}" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: transparent; border: 0; color: #9AAAB1;">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V6a2 2 0 0 1 2-2h9"></path></svg>
+</button>
+</div>
+<sc-if value="{{v.shown}}" hint-placeholder-val="{{ false }}">
+<code style="padding: 0 10px 10px 0; font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; color: #C9D6DB; word-break: break-all;">{{v.value}}</code>
+</sc-if>
+</li>
+</sc-for>
+</ul>
+</section>
+
+<section aria-labelledby="env-mounts" style="display: flex; flex-direction: column; gap: 8px;">
+<h2 id="env-mounts" style="margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #9AAAB1;">Volumes · 2 mounts</h2>
+<ul style="margin: 0; padding: 0 14px; list-style: none; display: flex; flex-direction: column; border-radius: 16px; border: 1px solid #243036;">
+<li style="display: flex; align-items: center; gap: 10px; min-height: 52px; border-bottom: 1px solid #243036;">
+<span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">api_config → /etc/api</span>
+<span style="font-size: 12px; color: #9AAAB1;">Named volume</span>
+</span>
+<span style="flex-shrink: 0; padding: 2px 9px; border-radius: 999px; background: #1E282D; color: #E8EEF0; font-size: 12px; font-weight: 600;">read-write</span>
+</li>
+<li style="display: flex; align-items: center; gap: 10px; min-height: 52px;">
+<span style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">api_cache → /var/cache</span>
+<span style="font-size: 12px; color: #9AAAB1;">Named volume</span>
+</span>
+<span style="flex-shrink: 0; padding: 2px 9px; border-radius: 999px; background: #1E282D; color: #E8EEF0; font-size: 12px; font-weight: 600;">read-write</span>
+</li>
+</ul>
+</section>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#5BE3B0","options":["#5BE3B0","#6CB8FF","#F2B45A"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+var names = ['DATABASE_URL', 'FEATURE_FLAGS', 'JWT_SECRET', 'LOG_LEVEL', 'NODE_ENV', 'OTEL_ENDPOINT', 'PORT', 'RATE_LIMIT', 'REDIS_URL', 'REGION', 'SENTRY_DSN', 'STRIPE_KEY'];
+var revealed = { LOG_LEVEL: 'info' };
+var vars = names.map(function (n, i) {
+var shown = Object.prototype.hasOwnProperty.call(revealed, n);
+return {
+name: n,
+shown: shown,
+hidden: !shown,
+value: shown ? revealed[n] : '',
+toggle: shown ? 'Hide' : 'Reveal',
+toggleLabel: (shown ? 'Hide ' : 'Reveal ') + n,
+copyLabel: 'Copy the value of ' + n,
+divider: i === names.length - 1 ? 'transparent' : '#243036'
+};
+});
+return { accent: this.props.accent ?? '#5BE3B0', vars: vars };
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Activity log</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:#0E1417;color:#E8EEF0}
+a{color:#5BE3B0;text-decoration:none}a:hover{color:#8FF0CB}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; overflow: hidden; box-sizing: border-box; padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 14px; background: #0E1417; color: #E8EEF0;">
+<a href="ServerSettings.dc.html" style="flex-shrink: 0; display: flex; align-items: center; gap: 4px; height: 44px; align-self: flex-start; color: #9AAAB1; font-size: 15px;">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+<span>Settings</span>
+</a>
+
+<header style="flex-shrink: 0; display: flex; flex-direction: column; gap: 2px;">
+<h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: -0.5px;">Activity log</h1>
+<div style="font-size: 13px; color: #9AAAB1;">Who did what on prod-eu-1, and when</div>
+</header>
+
+<div style="flex-shrink: 0; display: flex; align-items: center; gap: 8px; height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 12px; background: #161E22; border: 1px solid #243036; color: #9AAAB1;">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+<label for="act-filter" style="position: absolute; width: 1px; height: 1px; overflow: hidden;">Filter the activity log</label>
+<input id="act-filter" type="search" placeholder="Filter by container, device or action" style="flex-grow: 1; min-width: 0; height: 40px; background: transparent; border: 0; outline: none; color: #E8EEF0; font-size: 14px;">
+</div>
+
+<div role="group" aria-label="Filter by result" style="flex-shrink: 0; display: flex; gap: 8px;">
+<button type="button" aria-pressed="true" style="height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid {{accent}}; background: {{accent}}; color: #0E1417; font-size: 14px; font-weight: 600;">All</button>
+<button type="button" aria-pressed="false" style="height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #2A363C; background: #161E22; color: #E8EEF0; font-size: 14px; font-weight: 600;">Denied</button>
+<button type="button" aria-pressed="false" style="height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #2A363C; background: #161E22; color: #E8EEF0; font-size: 14px; font-weight: 600;">Errors</button>
+<button type="button" aria-pressed="false" style="height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #2A363C; background: #161E22; color: #E8EEF0; font-size: 14px; font-weight: 600;">Mine</button>
+</div>
+
+<sc-for list="{{days}}" as="day" hint-placeholder-count="2">
+<section style="flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;">
+<h2 style="margin: 0; font-size: 13px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #9AAAB1;">{{day.label}}</h2>
+<ol style="margin: 0; padding: 0 16px; list-style: none; display: flex; flex-direction: column; border-radius: 20px; background: #161E22; border: 1px solid #243036;">
+<sc-for list="{{day.rows}}" as="row" hint-placeholder-count="3">
+<li style="display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid {{row.divider}};">
+<time style="flex-shrink: 0; width: 44px; padding-top: 1px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #9AAAB1;">{{row.t}}</time>
+<div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+<div style="font-size: 14px; line-height: 1.35;">{{row.text}}</div>
+<div style="display: flex; align-items: center; gap: 8px;">
+<span style="flex-grow: 1; min-width: 0; font-size: 12px; color: #9AAAB1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{row.who}}</span>
+<span style="flex-shrink: 0; padding: 2px 9px; border-radius: 999px; background: {{row.pillBg}}; color: {{row.pillFg}}; font-size: 12px; font-weight: 600;">{{row.result}}</span>
+</div>
+</div>
+</li>
+</sc-for>
+</ol>
+</section>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#5BE3B0","options":["#5BE3B0","#6CB8FF","#F2B45A"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+var pills = {
+ok: ['#1E282D', '#E8EEF0'],
+denied: ['#33290F', '#F2B45A'],
+error: ['#3A1C19', '#FF8A7D']
+};
+var groups = [
+{ label: 'Today', rows: [
+{ t: '09:41', text: 'nginx-proxy restarted from this phone', who: 'This phone · admin', result: 'ok' },
+{ t: '09:12', text: 'Shell opened on api-gateway from this phone', who: 'This phone · admin', result: 'ok' },
+{ t: '08:55', text: 'Stack monitoring brought down from On-call pixel', who: 'On-call pixel · viewer', result: 'denied' },
+{ t: '08:30', text: 'Image redis:7.2 pulled from Ops iPad', who: 'Ops iPad · operator', result: 'ok' }
+] },
+{ label: 'Yesterday', rows: [
+{ t: '18:04', text: 'Service api scaled from Ops iPad', who: 'Ops iPad · operator', result: 'error' },
+{ t: '16:20', text: 'Environment of api-gateway read from this phone', who: 'This phone · admin', result: 'ok' }
+] }
+];
+var days = groups.map(function (g) {
+return {
+label: g.label,
+rows: g.rows.map(function (r, i) {
+return Object.assign({}, r, {
+pillBg: pills[r.result][0],
+pillFg: pills[r.result][1],
+divider: i === g.rows.length - 1 ? 'transparent' : '#243036'
+});
+})
+};
+});
+return { accent: this.props.accent ?? '#5BE3B0', days: days };
+}
+}
+</script>
+</body>
+</html>

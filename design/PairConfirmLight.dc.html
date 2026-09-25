@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Confirm the certificate, light theme</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'IBM Plex Sans',sans-serif;background:#F3F5F4;color:#15201E}
+a{color:#0B7A5C;text-decoration:none}a:hover{color:#075E46}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #F3F5F4; color: #15201E; font-family: 'IBM Plex Sans', sans-serif;">
+<div aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 390px; height: 844px;">
+<dc-import name="PairAgentLight" accent="{{accent}}" hint-size="390px,844px"></dc-import>
+</div>
+<div style="position: absolute; left: 0; top: 0; width: 390px; height: 844px; background: rgba(21, 32, 30, 0.45);"></div>
+
+<section role="dialog" aria-modal="true" aria-labelledby="pc-title" style="position: absolute; left: 0; bottom: 0; width: 390px; box-sizing: border-box; padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 16px; border-radius: 28px 28px 0 0; background: #FFFFFF; border-top: 1px solid #CFD8D6;">
+<div aria-hidden="true" style="align-self: center; width: 40px; height: 4px; border-radius: 2px; background: #B5C2BF;"></div>
+
+<div style="display: flex; align-items: center; gap: 14px;">
+<div style="flex-shrink: 0; width: 48px; height: 48px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: #D9F2E8; color: #0B7A5C;">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.500-3.200 8-8 9-4.800-1-8-4.500-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>
+</div>
+<div style="min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+<h1 id="pc-title" style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: -0.3px;">Check the certificate</h1>
+<div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #55656B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">agent.example.com:8443</div>
+</div>
+</div>
+
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #2B3A3F;">Compare with the fingerprint the agent printed on the host. If every group matches, pin it: from then on the app refuses this server if the certificate changes.</p>
+
+<div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px; border-radius: 14px; background: #E9EEEC; border: 1px solid #DCE3E1;">
+<div style="font-size: 11px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #55656B;">SHA-256 fingerprint</div>
+<div aria-label="A4E97C10 3B65D28F 410A96BE 572DC834 1F70AB59 E3068DC1 75429BE0 136A2F5C" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 10px; font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500; letter-spacing: 0.4px; color: #15201E;">
+<span>A4E97C10</span><span>3B65D28F</span><span>410A96BE</span><span>572DC834</span>
+<span>1F70AB59</span><span>E3068DC1</span><span>75429BE0</span><span>136A2F5C</span>
+</div>
+</div>
+
+<dl style="margin: 0; display: flex; flex-direction: column; padding: 0 14px; border-radius: 16px; border: 1px solid #DCE3E1;">
+<div style="display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid #DCE3E1;">
+<dt style="flex-grow: 1; font-size: 14px; color: #55656B;">Agent version</dt>
+<dd style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 13px;">1.5.0</dd>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid #DCE3E1;">
+<dt style="flex-grow: 1; font-size: 14px; color: #55656B;">Role for this phone</dt>
+<dd style="margin: 0; font-size: 14px;">Admin</dd>
+</div>
+<div style="display: flex; align-items: center; gap: 12px; min-height: 44px;">
+<dt style="flex-grow: 1; font-size: 14px; color: #55656B;">Device id</dt>
+<dd style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 13px;">dev-1</dd>
+</div>
+</dl>
+
+<div style="display: flex; gap: 10px;">
+<a href="PairAgentLight.dc.html" style="flex: 1 1 0; display: flex; align-items: center; justify-content: center; height: 54px; box-sizing: border-box; border-radius: 16px; border: 1px solid #B5C2BF; color: #15201E; font-size: 16px; font-weight: 600;">Cancel</a>
+<a href="DashboardLight.dc.html" style="flex: 1 1 0; display: flex; align-items: center; justify-content: center; height: 54px; box-sizing: border-box; border-radius: 16px; background: {{accent}}; color: #FFFFFF; font-size: 16px; font-weight: 600;">Pin and pair</a>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0B7A5C","options":["#0B7A5C","#1F5FBF","#8A5200"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#0B7A5C' };
+}
+}
+</script>
+</body>
+</html>
