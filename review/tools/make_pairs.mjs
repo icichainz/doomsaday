@@ -61,6 +61,31 @@ const BOTH = [
 ];
 const ONLY = { free: ['ProLocked', 'ProLimit'], pro: ['ProBrand'] };
 
+/** Branch states-and-dialogs: empty, error and loading states, jobs, lock. */
+const STATES_AND_DIALOGS = [
+  'EmptyStates',
+  'EmptyStatesLight',
+  'LoadingError',
+  'LoadingErrorLight',
+  'LoadingErrorLoading',
+  'JobSheet',
+  'JobSheetLight',
+  'JobDone',
+  'DesktopJob',
+  'DesktopJobLight',
+  'LockScreen',
+  'LockScreenLight',
+  'DesktopLock',
+  'DesktopLockLight',
+  'MainDemo',
+  'MainDemoLight',
+];
+BOTH.push(...STATES_AND_DIALOGS);
+ONLY.free.push('ProUpgrade', 'ProUpgradeLight');
+
+/** App captures that pair against a board of another name. */
+const DESIGN_OF = { LoadingErrorLoading: 'LoadingError' };
+
 /** ProBrand pairs against the sidebar brand alone, so the app shot is cropped. */
 const CROP = { ProBrand: { x: 0, y: 0, w: 264, h: 150 } };
 
@@ -87,7 +112,7 @@ function panel(label, file, size, crop) {
 }
 
 function compose(board, flavor) {
-  const designFile = path.join(designDir, `${board}.png`);
+  const designFile = path.join(designDir, `${DESIGN_OF[board] ?? board}.png`);
   const appFile = path.join(appDir, flavor, `${board}.png`);
   if (!fs.existsSync(designFile)) return `no design/${board}.png`;
   if (!fs.existsSync(appFile)) return `no app/${flavor}/${board}.png`;
