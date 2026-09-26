@@ -4,6 +4,7 @@
 library;
 
 import 'models.dart';
+import 'this_device.dart';
 
 const int _mb = 1024 * 1024;
 const int _gb = 1024 * _mb;
@@ -77,6 +78,15 @@ class MockWorld {
     );
   }
 
+  /// What this device is called on the agent: the seed pairs it under the
+  /// hardware's own name ([thisDeviceLabel]), as the real app does.
+  String get selfDeviceName {
+    for (final DeviceInfo device in devices) {
+      if (device.isSelf) return device.name;
+    }
+    return thisDeviceLabel();
+  }
+
   int _activityId = 0;
 
   void addActivity(String action, String target) => activity.insert(
@@ -88,7 +98,7 @@ class MockWorld {
       target: target,
       result: 'ok',
       deviceId: 'dev-1',
-      deviceName: 'This phone',
+      deviceName: thisDeviceLabel(),
       role: server.role.name,
       status: 200,
     ),
@@ -601,12 +611,9 @@ MockWorld seedProduction() {
       ),
     ],
     images: images,
-    imageSummary: ImageList(
-      images: const <DockerImage>[],
-      totalCount: 23,
-      totalBytes: 9019431321, // 8.4 GB
-      reclaimableBytes: 3328599654, // 3.1 GB
-    ),
+    // Computed from the rows above, so the subtitle ("6 images · 1.9 GB ·
+    // 597 MB unused") always agrees with the table under it.
+    imageSummary: ImageList.derived(images),
     volumes: <VolumeInfo>[
       VolumeInfo(
         name: 'web-platform_pgdata',
@@ -809,7 +816,7 @@ MockWorld seedProduction() {
     devices: <DeviceInfo>[
       DeviceInfo(
         id: 'dev-1',
-        name: 'This phone',
+        name: thisDeviceLabel(),
         role: ServerRole.admin,
         lastSeenAt: DateTime.now(),
         isSelf: true,
@@ -845,7 +852,7 @@ MockWorld seedProduction() {
         target: 'nginx-proxy',
         result: 'ok',
         deviceId: 'dev-1',
-        deviceName: 'This phone',
+        deviceName: thisDeviceLabel(),
         role: 'admin',
         status: 200,
       ),
@@ -867,7 +874,7 @@ MockWorld seedProduction() {
         target: 'monitoring',
         result: 'ok',
         deviceId: 'dev-1',
-        deviceName: 'This phone',
+        deviceName: thisDeviceLabel(),
         role: 'admin',
         status: 202,
       ),
@@ -1103,7 +1110,7 @@ MockWorld seedStaging() {
     devices: <DeviceInfo>[
       DeviceInfo(
         id: 'dev-1',
-        name: 'This phone',
+        name: thisDeviceLabel(),
         role: ServerRole.operator,
         lastSeenAt: DateTime.now(),
         isSelf: true,
@@ -1122,7 +1129,7 @@ MockWorld seedStaging() {
         target: 'staging-web',
         result: 'ok',
         deviceId: 'dev-1',
-        deviceName: 'This phone',
+        deviceName: thisDeviceLabel(),
         role: 'operator',
         status: 200,
       ),
@@ -1273,7 +1280,7 @@ MockWorld seedPaired({
     devices: <DeviceInfo>[
       DeviceInfo(
         id: 'dev-1',
-        name: 'This phone',
+        name: thisDeviceLabel(),
         role: ServerRole.admin,
         lastSeenAt: DateTime.now(),
         isSelf: true,
@@ -1289,10 +1296,10 @@ MockWorld seedPaired({
         id: 'act-pair-1',
         time: DateTime.now(),
         action: 'POST /v1/pair',
-        target: 'This phone',
+        target: thisDeviceLabel(),
         result: 'ok',
         deviceId: 'dev-1',
-        deviceName: 'This phone',
+        deviceName: thisDeviceLabel(),
         role: 'admin',
         status: 201,
       ),

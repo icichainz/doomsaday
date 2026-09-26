@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/models.dart';
 import '../../data/providers.dart';
 import '../../data/this_device.dart';
+import '../../layout/layout.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/desktop.dart';
 import '../../widgets/filter_field.dart';
 import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
@@ -109,19 +112,121 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
         ref.watch(meProvider(serverId)).valueOrNull?.deviceId ??
         ref.watch(serverProvider(serverId)).deviceId;
 
+    final bool desktop = WindowClass.of(context).usesDesktopExtras;
+    final String subtitle = 'Who did what on $serverId, and when';
+    final Widget field = FilterField(
+      controller: _query,
+      hint: 'Filter by container, device or action',
+      width: desktop ? 320 : null,
+      onChanged: (_) => setState(() {}),
+    );
+    final List<Widget> chips = <Widget>[
+      for (final ActivityFilter f in ActivityFilter.values)
+        desktop
+            ? PillChip(
+                label: f.label,
+                selected: f == _filter,
+                onPressed: () => setState(() => _filter = f),
+              )
+            : FilterChipButton(
+                label: f.label,
+                selected: f == _filter,
+                onPressed: () => setState(() => _filter = f),
+              ),
+    ];
+    final Widget log = AsyncSection<List<ActivityEntry>>(
+      value: activity,
+      onRetry: () => ref.invalidate(activityProvider(serverId)),
+      loadingRows: 6,
+      loadingRowHeight: desktop ? 46 : 64,
+      isEmpty: (List<ActivityEntry> list) => list.isEmpty,
+      empty: const EmptyView(
+        glyph: StrokeGlyph.history,
+        title: 'Nothing recorded yet',
+        message: 'Actions taken from any paired device show up here.',
+      ),
+      builder: (List<ActivityEntry> list) {
+        final List<ActivityDay> days = groupActivity(
+          list,
+          filter: _filter,
+          query: _query.text,
+          selfDeviceId: selfId,
+        );
+        if (days.isEmpty) {
+          return EmptyView(
+            glyph: StrokeGlyph.search,
+            title: 'No matching activity',
+            message: 'Nothing here matches that search.',
+            secondary: EmptyAction(
+              'Clear filter',
+              onPressed: () => setState(() {
+                _query.clear();
+                _filter = ActivityFilter.all;
+              }),
+            ),
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            for (final ActivityDay day in days) ...<Widget>[
+              if (day != days.first) const SizedBox(height: 16),
+              SectionHeader(day.heading),
+              const SizedBox(height: 8),
+              if (desktop)
+                _DesktopDay(entries: day.entries, selfDeviceId: selfId)
+              else
+                RowGroup(
+                  children: <Widget>[
+                    for (final ActivityEntry entry in day.entries)
+                      _ActivityRow(entry: entry, selfDeviceId: selfId),
+                  ],
+                ),
+            ],
+          ],
+        );
+      },
+    );
+
+    // DesktopActivity: left-aligned under the page header with the way back
+    // to Server settings; the filter and the chips share one row, and each
+    // record is one 46 px line.
+    if (desktop) {
+      return DesktopPage(
+        children: <Widget>[
+          DesktopHeader(
+            eyebrow: DesktopBackLink(
+              label: 'Server settings',
+              onTap: () => context.go('/s/$serverId/settings'),
+            ),
+            title: 'Activity log',
+            subtitle: subtitle,
+          ),
+          Row(
+            children: <Widget>[
+              field,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Semantics(
+                  label: 'Filter by result',
+                  container: true,
+                  child: PillChipRow(chips: chips),
+                ),
+              ),
+            ],
+          ),
+          log,
+        ],
+      );
+    }
+
     return PushedPage(
       gap: 14,
       children: <Widget>[
         const BackLink('Settings'),
-        ScreenHeader(
-          title: 'Activity log',
-          subtitle: 'Who did what on $serverId, and when',
-        ),
-        FilterField(
-          controller: _query,
-          hint: 'Filter by container, device or action',
-          onChanged: (_) => setState(() {}),
-        ),
+        ScreenHeader(title: 'Activity log', subtitle: subtitle),
+        field,
         Semantics(
           label: 'Filter by result',
           container: true,
@@ -129,71 +234,112 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: <Widget>[
-                for (final ActivityFilter f
-                    in ActivityFilter.values) ...<Widget>[
-                  if (f.index > 0) const SizedBox(width: 8),
-                  FilterChipButton(
-                    label: f.label,
-                    selected: f == _filter,
-                    onPressed: () => setState(() => _filter = f),
-                  ),
+                for (int i = 0; i < chips.length; i++) ...<Widget>[
+                  if (i > 0) const SizedBox(width: 8),
+                  chips[i],
                 ],
               ],
             ),
           ),
         ),
-        AsyncSection<List<ActivityEntry>>(
-          value: activity,
-          onRetry: () => ref.invalidate(activityProvider(serverId)),
-          loadingRows: 6,
-          loadingRowHeight: 64,
-          isEmpty: (List<ActivityEntry> list) => list.isEmpty,
-          empty: const EmptyView(
-            icon: Icons.history,
-            title: 'Nothing recorded yet',
-            message: 'Actions taken from any paired device show up here.',
-          ),
-          builder: (List<ActivityEntry> list) {
-            final List<ActivityDay> days = groupActivity(
-              list,
-              filter: _filter,
-              query: _query.text,
-              selfDeviceId: selfId,
-            );
-            if (days.isEmpty) {
-              return EmptyView(
-                glyph: StrokeGlyph.search,
-                title: 'No matching activity',
-                message: 'Nothing here matches that search.',
-                secondary: EmptyAction(
-                  'Clear filter',
-                  onPressed: () => setState(() {
-                    _query.clear();
-                    _filter = ActivityFilter.all;
-                  }),
-                ),
-              );
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                for (final ActivityDay day in days) ...<Widget>[
-                  if (day != days.first) const SizedBox(height: 16),
-                  SectionHeader(day.heading),
-                  const SizedBox(height: 8),
-                  RowGroup(
-                    children: <Widget>[
-                      for (final ActivityEntry entry in day.entries)
-                        _ActivityRow(entry: entry, selfDeviceId: selfId),
-                    ],
+        log,
+      ],
+    );
+  }
+}
+
+/// Who acted, as the row's second line says it: `This Mac · admin`.
+String _who(ActivityEntry entry, String selfDeviceId) {
+  final String device = entry.isFrom(selfDeviceId)
+      ? thisDeviceLabel()
+      : (entry.deviceName.isEmpty ? 'Unknown device' : entry.deviceName);
+  return entry.role.isEmpty ? device : '$device · ${entry.role.toLowerCase()}';
+}
+
+PillTone _toneOf(ActivityEntry entry) => switch (entry.result) {
+  'denied' => PillTone.warning,
+  'error' => PillTone.danger,
+  _ => PillTone.neutral,
+};
+
+/// One day of DesktopActivity: a bordered card of 46 px lines — time, the
+/// sentence, who, and the result pill at the right.
+class _DesktopDay extends StatelessWidget {
+  const _DesktopDay({required this.entries, required this.selfDeviceId});
+
+  final List<ActivityEntry> entries;
+  final String selfDeviceId;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    return Container(
+      decoration: BoxDecoration(
+        color: t.surface,
+        borderRadius: AppShape.smallCardRadius,
+        border: Border.all(color: t.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (int i = 0; i < entries.length; i++)
+            Container(
+              height: context.density.row,
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              decoration: BoxDecoration(
+                border: i == entries.length - 1
+                    ? null
+                    : Border(bottom: BorderSide(color: t.faintDivider)),
+              ),
+              child: Row(
+                children: <Widget>[
+                  SizedBox(
+                    width: 52,
+                    child: Text(
+                      formatHourMinute(entries[i].time),
+                      style: AppText.monoSmall.copyWith(color: t.mutedText),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      entries[i].sentence(
+                        selfDeviceId: selfDeviceId,
+                        selfLabel: thisDeviceLabel(capitalized: false),
+                        withResult: false,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.small.copyWith(color: t.text),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  SizedBox(
+                    width: 200,
+                    child: Text(
+                      _who(entries[i], selfDeviceId),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12.5, color: t.mutedText),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  SizedBox(
+                    width: 72,
+                    child: Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: _ResultPill(
+                        entries[i].result.isEmpty ? 'ok' : entries[i].result,
+                        _toneOf(entries[i]),
+                      ),
+                    ),
                   ),
                 ],
-              ],
-            );
-          },
-        ),
-      ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -207,18 +353,8 @@ class _ActivityRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
-    final bool self = entry.isFrom(selfDeviceId);
-    final String device = self
-        ? thisDeviceLabel()
-        : (entry.deviceName.isEmpty ? 'Unknown device' : entry.deviceName);
-    final String who = entry.role.isEmpty
-        ? device
-        : '$device · ${entry.role.toLowerCase()}';
-    final PillTone tone = switch (entry.result) {
-      'denied' => PillTone.warning,
-      'error' => PillTone.danger,
-      _ => PillTone.neutral,
-    };
+    final String who = _who(entry, selfDeviceId);
+    final PillTone tone = _toneOf(entry);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(

@@ -96,7 +96,7 @@ class _LogWallScreenState extends ConsumerState<LogWallScreen> {
             ),
             DoomButton(
               _pausedAll ? 'Resume all' : 'Pause all',
-              icon: _pausedAll ? Icons.play_arrow : Icons.pause,
+              glyph: _pausedAll ? StrokeGlyph.play : StrokeGlyph.pause,
               height: 36,
               radius: 10,
               onPressed: () => setState(() => _pausedAll = !_pausedAll),
@@ -339,7 +339,7 @@ class _LogPaneState extends ConsumerState<LogPane> {
                 ),
                 const SizedBox(width: 4),
                 DoomIconButton(
-                  icon: _paused ? Icons.play_arrow : Icons.pause,
+                  glyph: _paused ? StrokeGlyph.play : StrokeGlyph.pause,
                   semanticLabel:
                       '${_paused ? 'Resume' : 'Pause'} ${widget.pane.name}',
                   size: 30,

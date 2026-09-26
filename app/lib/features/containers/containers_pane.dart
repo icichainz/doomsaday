@@ -468,7 +468,7 @@ class _DetailPane extends ConsumerWidget {
             return <Widget>[
               if (tight)
                 DoomIconButton(
-                  icon: Icons.grid_view_outlined,
+                  glyph: StrokeGlyph.fleet,
                   semanticLabel: 'Open in log wall',
                   tooltip: 'Open in log wall',
                   size: 36,
@@ -479,7 +479,7 @@ class _DetailPane extends ConsumerWidget {
               else
                 DoomButton(
                   'Open in log wall',
-                  icon: Icons.grid_view_outlined,
+                  glyph: StrokeGlyph.fleet,
                   height: 36,
                   radius: 10,
                   onPressed: open,
@@ -685,7 +685,7 @@ class _DetailHeader extends ConsumerWidget {
         const SizedBox(width: 10),
         if (tight)
           DoomIconButton(
-            icon: Icons.refresh,
+            glyph: StrokeGlyph.restart,
             semanticLabel: 'Restart ${detail.name}',
             tooltip: 'Restart',
             size: 36,
@@ -698,7 +698,7 @@ class _DetailHeader extends ConsumerWidget {
         else
           DoomButton(
             'Restart',
-            icon: Icons.refresh,
+            glyph: StrokeGlyph.restart,
             height: 36,
             radius: 10,
             onPressed: role.canOperate && running
@@ -708,7 +708,7 @@ class _DetailHeader extends ConsumerWidget {
         const SizedBox(width: 8),
         if (tight)
           DoomIconButton(
-            icon: running ? Icons.stop_outlined : Icons.play_arrow,
+            glyph: running ? StrokeGlyph.stop : StrokeGlyph.play,
             semanticLabel: '${running ? 'Stop' : 'Start'} ${detail.name}',
             tooltip: running ? 'Stop' : 'Start',
             size: 36,
@@ -727,10 +727,10 @@ class _DetailHeader extends ConsumerWidget {
         else
           DoomButton(
             running ? 'Stop' : 'Start',
-            icon: running ? Icons.stop : Icons.play_arrow,
+            glyph: running ? StrokeGlyph.stop : StrokeGlyph.play,
             height: 36,
             radius: 10,
-            tone: running ? ButtonTone.danger : ButtonTone.outline,
+            tone: running ? ButtonTone.dangerOutline : ButtonTone.outline,
             onPressed: role.canOperate
                 ? () => startOrStopContainer(
                     context,
@@ -743,7 +743,7 @@ class _DetailHeader extends ConsumerWidget {
         const SizedBox(width: 4),
         if (role.canRemove)
           DoomIconButton(
-            icon: Icons.delete_outline,
+            glyph: StrokeGlyph.trash,
             semanticLabel: 'Remove container',
             size: 36,
             radius: 10,
@@ -769,7 +769,7 @@ class _DetailHeader extends ConsumerWidget {
         requestLine:
             'DELETE /v1/containers/${detail.id}?force=true&volumes=false',
         confirmLabel: 'Remove container',
-        icon: Icons.delete_outline,
+        glyph: StrokeGlyph.trash,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
         target: detail.name,
       ),

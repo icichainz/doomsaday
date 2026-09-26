@@ -16,16 +16,14 @@ import 'surfaces.dart';
 
 class _Heading extends StatelessWidget {
   const _Heading({
-    this.icon,
-    this.glyph,
+    required this.glyph,
     required this.title,
     required this.subtitle,
     this.danger = true,
     this.compact = false,
   });
 
-  final IconData? icon;
-  final StrokeGlyph? glyph;
+  final StrokeGlyph glyph;
   final String title;
   final String subtitle;
   final bool danger;
@@ -46,13 +44,11 @@ class _Heading extends StatelessWidget {
             color: danger ? t.dangerTint : t.accentTint,
             borderRadius: BorderRadius.circular(compact ? 14 : 16),
           ),
-          child: glyph != null
-              ? StrokeIcon(
-                  glyph!,
-                  size: 22,
-                  color: danger ? t.danger : t.accent,
-                )
-              : Icon(icon, size: 22, color: danger ? t.danger : t.accent),
+          child: StrokeIcon(
+            glyph,
+            size: 22,
+            color: danger ? t.danger : t.accent,
+          ),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -87,7 +83,7 @@ class RiskyAction {
     required this.explanation,
     required this.requestLine,
     required this.confirmLabel,
-    required this.icon,
+    required this.glyph,
     required this.requireFingerprint,
     required this.target,
   });
@@ -99,7 +95,7 @@ class RiskyAction {
   /// For example `POST /v1/containers/4f2a9c1e7b3d/stop?timeout=10`.
   final String requestLine;
   final String confirmLabel;
-  final IconData icon;
+  final StrokeGlyph glyph;
 
   /// Mirrors the agent's `require_biometric_for_risky` setting.
   final bool requireFingerprint;
@@ -247,7 +243,7 @@ class _ConfirmBodyState extends State<_ConfirmBody> {
         handle: widget.sheet,
         children: <Widget>[
           _Heading(
-            icon: widget.action.icon,
+            glyph: widget.action.glyph,
             title: widget.action.title,
             subtitle: widget.action.subtitle,
             compact: !widget.sheet,
@@ -454,8 +450,7 @@ Future<String?> showPromptSheet(
   required String label,
   required String hint,
   required String confirmLabel,
-  IconData? icon,
-  StrokeGlyph? glyph,
+  required StrokeGlyph glyph,
   bool mono = true,
   bool obscure = false,
 }) {
@@ -467,7 +462,6 @@ Future<String?> showPromptSheet(
       label: label,
       hint: hint,
       confirmLabel: confirmLabel,
-      icon: icon,
       glyph: glyph,
       mono: mono,
       obscure: obscure,
@@ -483,7 +477,6 @@ class _PromptBody extends StatefulWidget {
     required this.label,
     required this.hint,
     required this.confirmLabel,
-    required this.icon,
     required this.glyph,
     required this.mono,
     required this.obscure,
@@ -495,8 +488,7 @@ class _PromptBody extends StatefulWidget {
   final String label;
   final String hint;
   final String confirmLabel;
-  final IconData? icon;
-  final StrokeGlyph? glyph;
+  final StrokeGlyph glyph;
   final bool mono;
   final bool obscure;
   final bool sheet;
@@ -532,7 +524,6 @@ class _PromptBodyState extends State<_PromptBody> {
         handle: widget.sheet,
         children: <Widget>[
           _Heading(
-            icon: widget.icon,
             glyph: widget.glyph,
             title: widget.title,
             subtitle: widget.subtitle,

@@ -50,6 +50,54 @@ Future<void> showPairAgent(BuildContext context, WidgetRef ref) async {
   );
 }
 
+/// The `/pair` route. Below 600 it is the pushed screen; from 600 up there is
+/// no screen to push onto, so — like `/preferences` — the route draws the
+/// default page (the Servers list, or the fleet from 1100) and opens pairing
+/// over it exactly as the sidebar and the buttons do: the dialog, or P2 when
+/// this edition has no room left.
+class PairRoute extends StatelessWidget {
+  const PairRoute({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!WindowClass.of(context).usesDialogs) return const PairAgentScreen();
+    return const _PairOverDefaultPage();
+  }
+}
+
+class _PairOverDefaultPage extends ConsumerStatefulWidget {
+  const _PairOverDefaultPage();
+
+  @override
+  ConsumerState<_PairOverDefaultPage> createState() =>
+      _PairOverDefaultPageState();
+}
+
+class _PairOverDefaultPageState extends ConsumerState<_PairOverDefaultPage> {
+  bool _opened = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_opened) return;
+    _opened = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final GoRouter router = GoRouter.of(context);
+      await showPairAgent(context, ref);
+      // Closing the dialog leaves the route, so the URL stops saying pairing
+      // is open. A finished pairing has already gone to the new server's
+      // Overview, and that is left alone.
+      if (router.routeInformationProvider.value.uri.path == '/pair') {
+        router.go('/');
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const ServersScreen();
+}
+
 /// Screen 2 — Pair an agent.
 ///
 /// Trust on first use: the certificate the agent presents during the one
@@ -131,7 +179,7 @@ class _PairAgentScreenState extends ConsumerState<PairAgentScreen> {
     ref.invalidate(serverCardsProvider);
     if (!mounted) return;
     if (widget.dialog) Navigator.of(context).pop();
-    notify(
+    notifyAfterNavigation(
       context,
       '${result.server.name} paired as ${result.role.label.toLowerCase()} · '
       'certificate pinned',

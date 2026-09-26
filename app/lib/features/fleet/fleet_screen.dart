@@ -282,7 +282,7 @@ class _FleetScreenState extends ConsumerState<FleetScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     DoomIconButton(
-                      icon: Icons.notes,
+                      glyph: StrokeGlyph.logWall,
                       semanticLabel: 'Logs for ${row.container.name}',
                       size: 32,
                       radius: 8,
@@ -295,7 +295,7 @@ class _FleetScreenState extends ConsumerState<FleetScreen> {
                     ),
                     Builder(
                       builder: (BuildContext buttonContext) => DoomIconButton(
-                        icon: Icons.more_vert,
+                        glyph: StrokeGlyph.more,
                         semanticLabel: 'Actions for ${row.container.name}',
                         size: 32,
                         radius: 8,

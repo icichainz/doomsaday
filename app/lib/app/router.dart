@@ -45,10 +45,11 @@ GoRouter createRouter({String initialLocation = '/'}) => GoRouter(
           const PreferencesRoute(),
     ),
     GoRoute(
+      // Like `/preferences`: the pushed screen below 600, and from 600 the
+      // pair dialog (or P2 at the edition's limit) over the default page.
       path: '/pair',
       parentNavigatorKey: _rootKey,
-      builder: (BuildContext context, GoRouterState state) =>
-          const PairAgentScreen(),
+      builder: (BuildContext context, GoRouterState state) => const PairRoute(),
     ),
     GoRoute(
       path: '/all/logwall',

@@ -41,7 +41,7 @@ class RegistriesScreen extends ConsumerWidget {
       label: 'Username',
       hint: 'deploy-bot',
       confirmLabel: 'Next',
-      icon: Icons.person_outline,
+      glyph: StrokeGlyph.person,
       mono: false,
     );
     if (username == null || !context.mounted) return;
@@ -52,7 +52,7 @@ class RegistriesScreen extends ConsumerWidget {
       label: 'Password or token',
       hint: 'ghp_…',
       confirmLabel: 'Save',
-      icon: Icons.key_outlined,
+      glyph: StrokeGlyph.key,
       mono: false,
       obscure: true,
     );
@@ -218,7 +218,7 @@ class _RegistryCard extends ConsumerWidget {
       label: 'New password or token',
       hint: 'ghp_…',
       confirmLabel: 'Replace',
-      icon: Icons.key_outlined,
+      glyph: StrokeGlyph.key,
       mono: false,
       obscure: true,
     );
@@ -242,7 +242,7 @@ class _RegistryCard extends ConsumerWidget {
       label: 'Username',
       hint: registry.username.isEmpty ? 'deploy-bot' : registry.username,
       confirmLabel: 'Save',
-      icon: Icons.person_outline,
+      glyph: StrokeGlyph.person,
       mono: false,
     );
     if (username == null || !context.mounted) return;
@@ -269,7 +269,7 @@ class _RegistryCard extends ConsumerWidget {
             'go out anonymously, or fail if it is private.',
         requestLine: 'DELETE /v1/registries/${registry.id}',
         confirmLabel: 'Remove registry',
-        icon: Icons.delete_outline,
+        glyph: StrokeGlyph.trash,
         // Registry writes are admin only but not in the agent's 428 list.
         requireFingerprint: false,
         target: registry.host,

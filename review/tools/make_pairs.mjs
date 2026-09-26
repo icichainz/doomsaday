@@ -113,6 +113,16 @@ const ROUNDS = {
       'TabletStacks',
     ]),
   },
+  // screens_app_polish_test.dart: the desktop Devices and Activity pages,
+  // and the Light twins of Server settings and Images.
+  appPolish: {
+    both: [
+      ...withLight(['DesktopDevices', 'DesktopActivity']),
+      'ServerSettingsLight',
+      'ImagesLight',
+      'DesktopResourcesLight',
+    ],
+  },
 };
 
 /** The boards one flavor pairs, in round order, each once. */
@@ -185,6 +195,19 @@ ${right}
 
   const out = path.join(pairsDir, flavor, `${board}.png`);
   fs.mkdirSync(path.dirname(out), { recursive: true });
+  const started = Date.now();
+  try {
+    shoot(out, htmlFile, width, height);
+  } catch (error) {
+    // Headless Chrome sometimes writes the screenshot and then trips its own
+    // teardown watchdog; a fresh file is a finished pair.
+    const fresh = fs.existsSync(out) && fs.statSync(out).mtimeMs >= started;
+    if (!fresh) throw error;
+  }
+  return null;
+}
+
+function shoot(out, htmlFile, width, height) {
   execFileSync(
     CHROME,
     [
@@ -200,7 +223,6 @@ ${right}
     ],
     { stdio: ['ignore', 'ignore', 'pipe'] },
   );
-  return null;
 }
 
 const flavors = process.argv.slice(2).length

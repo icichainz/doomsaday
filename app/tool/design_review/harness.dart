@@ -4,8 +4,8 @@
 /// The whole app in demo mode at a board's exact size, device pixel ratio 1,
 /// the real fonts, a `RepaintBoundary` around it, one PNG per board into
 /// `--dart-define=REVIEW_OUT=` ([reviewOut]). [pumpApp] also takes
-/// [Preferences] (for the app lock) and can stop before the first settle (for
-/// a loading state). See `screens_test.dart` for how these files are run.
+/// [Preferences] (for the app lock), extra provider overrides (for a loading
+/// state that has to hold still) and can stop before the first settle. See `screens_test.dart` for how these files are run.
 /// Nothing here is a test on its own.
 library;
 
@@ -14,11 +14,14 @@ import 'dart:ui' as ui;
 
 import 'package:doomsaday/app/app.dart';
 import 'package:doomsaday/data/biometrics.dart';
+import 'package:doomsaday/data/mock_agent_api.dart';
 import 'package:doomsaday/data/mock_seed.dart';
+import 'package:doomsaday/data/models.dart';
 import 'package:doomsaday/data/providers.dart';
 import 'package:doomsaday/data/servers_repository.dart';
 import 'package:doomsaday/edition/edition.dart';
 import 'package:doomsaday/data/preferences.dart';
+import 'package:doomsaday/data/this_device.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -134,6 +137,7 @@ Future<void> pumpApp(
   Authenticator authenticator = const AlwaysConfirms(),
   Preferences? preferences,
   bool settleFirst = true,
+  List<Override> overrides = const <Override>[],
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -162,6 +166,7 @@ Future<void> pumpApp(
               ),
             ),
           ),
+          ...overrides,
         ],
         child: const DoomsadayApp(),
       ),
@@ -194,6 +199,88 @@ Future<void> tap(WidgetTester tester, Finder finder) async {
 Future<void> teardown(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());
   await tester.pump(const Duration(seconds: 6));
+}
+
+// -------------------------------------------------------------------- scene
+
+/// prod-eu-1's mock world, so a board can set the scene before it opens.
+MockWorld production(WidgetTester tester) =>
+    (appContainer(tester).read(serversRepositoryProvider).api(kServer)
+            as MockAgentApi)
+        .world;
+
+/// The six records the Activity boards draw (the phone's `Activity` and
+/// `DesktopActivity`): four today, two yesterday, one refused and one
+/// failed, from three devices. This device is named by [thisDeviceLabel],
+/// so the phone boards say "This phone" and the 1440 ones "This Mac".
+void seedBoardActivity(WidgetTester tester) {
+  final DateTime now = DateTime.now();
+  int n = 0;
+  DateTime at(int daysAgo, int hour, int minute) {
+    final DateTime t = DateTime(
+      now.year,
+      now.month,
+      now.day - daysAgo,
+      hour,
+      minute,
+    );
+    // Early in the morning "today at 09:41" has not happened yet.
+    return t.isAfter(now) ? now.subtract(Duration(minutes: 6 + 20 * n)) : t;
+  }
+
+  ActivityEntry entry(
+    DateTime time,
+    String action,
+    String target,
+    String device, {
+    String result = 'ok',
+  }) {
+    n++;
+    final (String id, String name, String role) = switch (device) {
+      'ipad' => ('dev-2', 'Ops iPad', 'operator'),
+      'pixel' => ('dev-3', 'On-call pixel', 'viewer'),
+      _ => ('dev-1', thisDeviceLabel(), 'admin'),
+    };
+    return ActivityEntry(
+      id: 'board-$n',
+      time: time,
+      action: action,
+      target: target,
+      result: result,
+      deviceId: id,
+      deviceName: name,
+      role: role,
+      status: result == 'ok' ? 200 : (result == 'denied' ? 403 : 500),
+    );
+  }
+
+  production(tester).activity
+    ..clear()
+    ..addAll(<ActivityEntry>[
+      entry(
+        at(0, 9, 41),
+        'POST /v1/containers/{id}/restart',
+        'nginx-proxy',
+        '',
+      ),
+      entry(at(0, 9, 12), 'WS /v1/containers/{id}/exec', 'api-gateway', ''),
+      entry(
+        at(0, 8, 55),
+        'POST /v1/stacks/{name}/down',
+        'monitoring',
+        'pixel',
+        result: 'denied',
+      ),
+      entry(at(0, 8, 30), 'POST /v1/images/pull', 'redis:7.2', 'ipad'),
+      entry(
+        at(1, 18, 4),
+        'POST /v1/services/{id}/scale',
+        'api',
+        'ipad',
+        result: 'error',
+      ),
+      entry(at(1, 16, 20), 'GET /v1/containers/{id}/env', 'api-gateway', ''),
+    ]);
 }
 
 // ------------------------------------------------------------------ capture
@@ -230,6 +317,7 @@ void board(
   TargetPlatform platform = TargetPlatform.android,
   Preferences? preferences,
   bool settleFirst = true,
+  List<Override> overrides = const <Override>[],
 }) {
   testWidgets(name, (WidgetTester tester) async {
     // Reset inside the body: the binding asserts the override is unset again
@@ -245,6 +333,7 @@ void board(
       authenticator: authenticator,
       preferences: preferences,
       settleFirst: settleFirst,
+      overrides: overrides,
     );
     await drive(tester);
     await shoot(tester, name);

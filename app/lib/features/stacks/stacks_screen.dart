@@ -204,7 +204,7 @@ class _StackCard extends ConsumerWidget {
             "stack's own network goes with it. Named volumes are kept.",
         requestLine: 'POST /v1/stacks/${stack.name}/down',
         confirmLabel: 'Bring it down',
-        icon: Icons.power_settings_new,
+        glyph: StrokeGlyph.stop,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
         target: stack.name,
       ),

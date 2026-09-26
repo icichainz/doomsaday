@@ -158,10 +158,7 @@ class OverviewScreen extends ConsumerWidget {
         children: <Widget>[
           DesktopHeader(
             title: server.name,
-            pill: StatusPill(
-              stats.hasError ? 'Offline' : 'Online',
-              tone: stats.hasError ? PillTone.danger : PillTone.accent,
-            ),
+            pill: _connectionPill(stats),
             subtitle: subtitle,
             actions: <Widget>[_JumpBox(serverId: serverId)],
           ),
@@ -205,10 +202,7 @@ class OverviewScreen extends ConsumerWidget {
     }
 
     final bool twoColumn = WindowClass.of(context).isMedium;
-    final Widget pill = StatusPill(
-      stats.hasError ? 'Offline' : 'Online',
-      tone: stats.hasError ? PillTone.danger : PillTone.accent,
-    );
+    final Widget pill = _connectionPill(stats);
     return ShellPage(
       gap: 18,
       children: <Widget>[
@@ -573,7 +567,7 @@ class _AttentionRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(Icons.chevron_right, size: 18, color: t.mutedText),
+            StrokeIcon(StrokeGlyph.chevronRight, size: 18, color: t.mutedText),
           ],
         ),
       ),
@@ -609,7 +603,7 @@ class _RecentActivity extends ConsumerWidget {
           loadingRowHeight: 36,
           isEmpty: (List<ActivityEntry> list) => list.isEmpty,
           empty: const EmptyView(
-            icon: Icons.history,
+            glyph: StrokeGlyph.history,
             title: 'No activity yet',
             message: 'Actions taken from any paired device show up here.',
           ),
@@ -659,4 +653,15 @@ class _RecentActivity extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// The header pill: Online and Offline once the agent has answered, and a
+/// neutral "Connecting" until then, so a slow agent is never called online
+/// before it has said anything (LoadingError's loading state).
+Widget _connectionPill(AsyncValue<SystemStats> stats) {
+  if (stats.hasError) {
+    return const StatusPill('Offline', tone: PillTone.danger);
+  }
+  if (stats.hasValue) return const StatusPill('Online');
+  return const StatusPill('Connecting', tone: PillTone.neutral);
 }

@@ -5,7 +5,11 @@ import '../theme/app_theme.dart';
 import '../theme/tokens.dart';
 import 'stroke_icons.dart';
 
-enum ButtonTone { primary, outline, danger, dangerFilled }
+/// [danger] is a neutral outline with a danger label (Remove, Down, Revoke);
+/// [dangerOutline] also draws the border in the danger border token, where
+/// the boards do: Unpair (ServerSettings, DesktopSettings) and the pane's
+/// Stop (DesktopContainers).
+enum ButtonTone { primary, outline, danger, dangerOutline, dangerFilled }
 
 /// The one button in the app. Tone picks the fill, border and label colour.
 class DoomButton extends StatelessWidget {
@@ -14,7 +18,6 @@ class DoomButton extends StatelessWidget {
     super.key,
     required this.onPressed,
     this.tone = ButtonTone.outline,
-    this.icon,
     this.glyph,
     this.height = 44,
     this.radius = 12,
@@ -25,9 +28,8 @@ class DoomButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final ButtonTone tone;
-  final IconData? icon;
 
-  /// One of the design's stroke icons, drawn instead of [icon].
+  /// One of the design's stroke icons, before the label.
   final StrokeGlyph? glyph;
   final double height;
   final double radius;
@@ -43,6 +45,7 @@ class DoomButton extends StatelessWidget {
       ButtonTone.primary => (t.accent, null, t.onAccent),
       ButtonTone.outline => (null, t.outlineBorder, t.text),
       ButtonTone.danger => (null, t.outlineBorder, t.danger),
+      ButtonTone.dangerOutline => (null, t.dangerBorder, t.danger),
       ButtonTone.dangerFilled => (t.danger, null, t.onDanger),
     };
     final bool enabled = onPressed != null && !busy;
@@ -61,10 +64,8 @@ class DoomButton extends StatelessWidget {
             child: CircularProgressIndicator(strokeWidth: 2, color: fg),
           )
         else if (glyph != null)
-          StrokeIcon(glyph!, size: 18, color: fg)
-        else if (icon != null)
-          Icon(icon, size: 18, color: fg),
-        if (busy || icon != null || glyph != null) const SizedBox(width: 8),
+          StrokeIcon(glyph!, size: 18, color: fg),
+        if (busy || glyph != null) const SizedBox(width: 8),
         Flexible(
           child: Text(
             label,
@@ -108,8 +109,7 @@ class DoomButton extends StatelessWidget {
 class DoomIconButton extends StatelessWidget {
   const DoomIconButton({
     super.key,
-    this.icon,
-    this.glyph,
+    required this.glyph,
     required this.semanticLabel,
     required this.onPressed,
     this.size = 48,
@@ -119,15 +119,10 @@ class DoomIconButton extends StatelessWidget {
     this.foreground,
     this.fill,
     this.tooltip,
-  }) : assert(
-         icon != null || glyph != null,
-         'a DoomIconButton draws either a Material icon or a design glyph',
-       );
+  });
 
-  final IconData? icon;
-
-  /// One of the design's own stroke icons, drawn instead of [icon].
-  final StrokeGlyph? glyph;
+  /// One of the design's own stroke icons.
+  final StrokeGlyph glyph;
   final String semanticLabel;
 
   /// Shown on hover, for a button whose label had to be dropped.
@@ -165,9 +160,7 @@ class DoomIconButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(radius),
               border: filled ? Border.all(color: t.strongBorder) : null,
             ),
-            child: glyph == null
-                ? Icon(icon, size: 20, color: fg)
-                : StrokeIcon(glyph!, size: 20, color: fg),
+            child: StrokeIcon(glyph, size: 20, color: fg),
           ),
         ),
       ),
@@ -396,7 +389,7 @@ class ReplicaStepper extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             _StepButton(
-              icon: Icons.remove,
+              glyph: StrokeGlyph.minus,
               label: 'Remove a replica from $name',
               onPressed: onChanged == null || value <= 0
                   ? null
@@ -411,7 +404,7 @@ class ReplicaStepper extends StatelessWidget {
               ),
             ),
             _StepButton(
-              icon: Icons.add,
+              glyph: StrokeGlyph.plus,
               label: 'Add a replica to $name',
               onPressed: onChanged == null ? null : () => onChanged!(value + 1),
             ),
@@ -423,9 +416,9 @@ class ReplicaStepper extends StatelessWidget {
 }
 
 class _StepButton extends StatelessWidget {
-  const _StepButton({required this.icon, required this.label, this.onPressed});
+  const _StepButton({required this.glyph, required this.label, this.onPressed});
 
-  final IconData icon;
+  final StrokeGlyph glyph;
   final String label;
   final VoidCallback? onPressed;
 
@@ -440,8 +433,8 @@ class _StepButton extends StatelessWidget {
         child: SizedBox(
           width: 44,
           height: 42,
-          child: Icon(
-            icon,
+          child: StrokeIcon(
+            glyph,
             size: 18,
             color: onPressed == null ? t.mutedText : t.text,
           ),

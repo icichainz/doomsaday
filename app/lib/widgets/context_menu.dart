@@ -6,19 +6,20 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../theme/tokens.dart';
+import 'stroke_icons.dart';
 
 class MenuAction {
   const MenuAction({
     required this.label,
     required this.onSelected,
-    this.icon,
+    this.glyph,
     this.danger = false,
     this.enabled = true,
   });
 
   final String label;
   final VoidCallback onSelected;
-  final IconData? icon;
+  final StrokeGlyph? glyph;
   final bool danger;
   final bool enabled;
 }
@@ -53,9 +54,9 @@ Future<void> showActionMenu(
           height: 38,
           child: Row(
             children: <Widget>[
-              if (action.icon != null) ...<Widget>[
-                Icon(
-                  action.icon,
+              if (action.glyph != null) ...<Widget>[
+                StrokeIcon(
+                  action.glyph!,
                   size: 16,
                   color: action.danger ? t.danger : t.mutedText,
                 ),

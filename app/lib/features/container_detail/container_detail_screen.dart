@@ -14,6 +14,7 @@ import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/stroke_icons.dart';
 import '../containers/container_actions.dart';
 import '../containers/containers_pane.dart';
 import 'container_config_sheet.dart';
@@ -70,7 +71,7 @@ class ContainerDetailScreen extends ConsumerWidget {
         requestLine:
             'DELETE /v1/containers/$containerId?force=true&volumes=false',
         confirmLabel: 'Remove container',
-        icon: Icons.delete_outline,
+        glyph: StrokeGlyph.trash,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
         target: detail.name,
       ),
@@ -144,7 +145,7 @@ class ContainerDetailScreen extends ConsumerWidget {
                   children: <Widget>[
                     Expanded(
                       child: _ActionTile(
-                        icon: Icons.refresh,
+                        glyph: StrokeGlyph.restart,
                         label: 'Restart',
                         onTap: running && role.canOperate
                             ? () => _restart(context, ref, d.name)
@@ -154,7 +155,7 @@ class ContainerDetailScreen extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _ActionTile(
-                        icon: running ? Icons.stop : Icons.play_arrow,
+                        glyph: running ? StrokeGlyph.stop : StrokeGlyph.play,
                         label: running ? 'Stop' : 'Start',
                         foreground: running ? t.danger : t.accent,
                         onTap: role.canOperate
@@ -165,7 +166,7 @@ class ContainerDetailScreen extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _ActionTile(
-                        icon: Icons.notes,
+                        glyph: StrokeGlyph.logWall,
                         label: 'Logs',
                         onTap: () => context.push(
                           '/s/$serverId/containers/$containerId/logs',
@@ -175,7 +176,7 @@ class ContainerDetailScreen extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: _ActionTile(
-                        icon: Icons.terminal,
+                        glyph: StrokeGlyph.terminal,
                         label: 'Shell',
                         // Admin only, and only into a running container.
                         onTap: role.canExec && running
@@ -241,7 +242,7 @@ class ContainerDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 16),
                   DoomButton(
                     'Remove container',
-                    icon: Icons.delete_outline,
+                    glyph: StrokeGlyph.trash,
                     tone: ButtonTone.danger,
                     height: 48,
                     radius: 16,
@@ -260,13 +261,13 @@ class ContainerDetailScreen extends ConsumerWidget {
 
 class _ActionTile extends StatelessWidget {
   const _ActionTile({
-    required this.icon,
+    required this.glyph,
     required this.label,
     this.onTap,
     this.foreground,
   });
 
-  final IconData icon;
+  final StrokeGlyph glyph;
   final String label;
   final VoidCallback? onTap;
   final Color? foreground;
@@ -286,7 +287,7 @@ class _ActionTile extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Icon(icon, size: 20, color: fg),
+              StrokeIcon(glyph, size: 20, color: fg),
               const SizedBox(height: 6),
               Text(label, style: AppText.pill.copyWith(color: fg)),
             ],

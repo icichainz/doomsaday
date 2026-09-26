@@ -205,7 +205,7 @@ class _ResourceRow extends StatelessWidget {
           StatusPill(pill, tone: tone),
           const SizedBox(width: 4),
           DoomIconButton(
-            icon: Icons.more_vert,
+            glyph: StrokeGlyph.more,
             semanticLabel: actionsLabel,
             size: 44,
             radius: 12,
@@ -245,7 +245,7 @@ Future<void> _showRowActions(
               if (canRemove)
                 DoomButton(
                   'Remove',
-                  icon: Icons.delete_outline,
+                  glyph: StrokeGlyph.trash,
                   tone: ButtonTone.danger,
                   height: 48,
                   radius: 14,
@@ -291,7 +291,7 @@ class _Images extends ConsumerWidget {
                   'to pull it from the registry.',
         requestLine: 'DELETE /v1/images/${image.id}?force=${image.inUse}',
         confirmLabel: 'Remove image',
-        icon: Icons.delete_outline,
+        glyph: StrokeGlyph.trash,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
         target: image.ref,
       ),
@@ -323,7 +323,7 @@ class _Images extends ConsumerWidget {
             'later costs bandwidth, nothing else.',
         requestLine: 'POST /v1/images/prune {"dangling_only": false}',
         confirmLabel: 'Prune images',
-        icon: Icons.cleaning_services_outlined,
+        glyph: StrokeGlyph.prune,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
         target: 'prune images',
       ),
@@ -347,7 +347,7 @@ class _Images extends ConsumerWidget {
   ) => <MenuAction>[
     MenuAction(
       label: 'Copy reference',
-      icon: Icons.copy_all_outlined,
+      glyph: StrokeGlyph.copy,
       onSelected: () {
         Clipboard.setData(ClipboardData(text: image.ref));
         notify(context, 'Image reference copied');
@@ -355,7 +355,7 @@ class _Images extends ConsumerWidget {
     ),
     MenuAction(
       label: 'Show containers',
-      icon: Icons.view_in_ar_outlined,
+      glyph: StrokeGlyph.containers,
       onSelected: () => notify(
         context,
         image.inUse
@@ -365,7 +365,7 @@ class _Images extends ConsumerWidget {
     ),
     MenuAction(
       label: 'Remove',
-      icon: Icons.delete_outline,
+      glyph: StrokeGlyph.trash,
       danger: true,
       enabled: role.canRemove,
       onSelected: () => _remove(context, ref, image),
@@ -585,7 +585,7 @@ class _Volumes extends ConsumerWidget {
             : 'The data in this volume is deleted and cannot be recovered.',
         requestLine: 'DELETE /v1/volumes/${volume.name}',
         confirmLabel: 'Remove volume',
-        icon: Icons.delete_outline,
+        glyph: StrokeGlyph.trash,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
         target: volume.name,
       ),
@@ -613,7 +613,7 @@ class _Volumes extends ConsumerWidget {
             'There is no undo.',
         requestLine: 'POST /v1/volumes/prune',
         confirmLabel: 'Prune volumes',
-        icon: Icons.cleaning_services_outlined,
+        glyph: StrokeGlyph.prune,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
         target: 'prune volumes',
       ),
@@ -635,7 +635,7 @@ class _Volumes extends ConsumerWidget {
   ) => <MenuAction>[
     MenuAction(
       label: 'Copy name',
-      icon: Icons.copy_all_outlined,
+      glyph: StrokeGlyph.copy,
       onSelected: () {
         Clipboard.setData(ClipboardData(text: volume.name));
         notify(context, 'Volume name copied');
@@ -643,7 +643,7 @@ class _Volumes extends ConsumerWidget {
     ),
     MenuAction(
       label: 'Show containers',
-      icon: Icons.view_in_ar_outlined,
+      glyph: StrokeGlyph.containers,
       onSelected: () => notify(
         context,
         volume.mounted
@@ -653,7 +653,7 @@ class _Volumes extends ConsumerWidget {
     ),
     MenuAction(
       label: 'Remove',
-      icon: Icons.delete_outline,
+      glyph: StrokeGlyph.trash,
       danger: true,
       enabled: role.canRemove,
       onSelected: () => _remove(context, ref, volume),
@@ -691,7 +691,7 @@ class _Volumes extends ConsumerWidget {
         loadingRowHeight: 46,
         isEmpty: (VolumeList list) => list.volumes.isEmpty,
         empty: const EmptyView(
-          icon: Icons.save_outlined,
+          glyph: StrokeGlyph.volumes,
           title: 'No volumes',
           message: 'Nothing on this host stores data in a named volume.',
         ),
@@ -829,7 +829,7 @@ class _Volumes extends ConsumerWidget {
           loadingRowHeight: 64,
           isEmpty: (VolumeList list) => list.volumes.isEmpty,
           empty: const EmptyView(
-            icon: Icons.save_outlined,
+            glyph: StrokeGlyph.volumes,
             title: 'No volumes',
             message: 'Nothing on this host stores data in a named volume.',
           ),
@@ -886,7 +886,7 @@ class _Networks extends ConsumerWidget {
                   'start until it is recreated.',
         requestLine: 'DELETE /v1/networks/${network.id}',
         confirmLabel: 'Remove network',
-        icon: Icons.delete_outline,
+        glyph: StrokeGlyph.trash,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
         target: network.name,
       ),
@@ -914,7 +914,7 @@ class _Networks extends ConsumerWidget {
             'container is removed.',
         requestLine: 'POST /v1/networks/prune',
         confirmLabel: 'Prune networks',
-        icon: Icons.cleaning_services_outlined,
+        glyph: StrokeGlyph.prune,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
         target: 'prune networks',
       ),
@@ -936,7 +936,7 @@ class _Networks extends ConsumerWidget {
   ) => <MenuAction>[
     MenuAction(
       label: 'Copy name',
-      icon: Icons.copy_all_outlined,
+      glyph: StrokeGlyph.copy,
       onSelected: () {
         Clipboard.setData(ClipboardData(text: network.name));
         notify(context, 'Network name copied');
@@ -944,7 +944,7 @@ class _Networks extends ConsumerWidget {
     ),
     MenuAction(
       label: 'Show containers',
-      icon: Icons.view_in_ar_outlined,
+      glyph: StrokeGlyph.containers,
       onSelected: () => notify(
         context,
         network.attached == 0
@@ -954,7 +954,7 @@ class _Networks extends ConsumerWidget {
     ),
     MenuAction(
       label: 'Remove',
-      icon: Icons.delete_outline,
+      glyph: StrokeGlyph.trash,
       danger: true,
       enabled: role.canRemove && network.removable,
       onSelected: () => _remove(context, ref, network),
@@ -994,7 +994,7 @@ class _Networks extends ConsumerWidget {
         loadingRowHeight: 46,
         isEmpty: (NetworkList list) => list.networks.isEmpty,
         empty: const EmptyView(
-          icon: Icons.lan_outlined,
+          glyph: StrokeGlyph.networks,
           title: 'No networks',
           message: 'This host reports no Docker networks.',
         ),
@@ -1134,7 +1134,7 @@ class _Networks extends ConsumerWidget {
           loadingRowHeight: 64,
           isEmpty: (NetworkList list) => list.networks.isEmpty,
           empty: const EmptyView(
-            icon: Icons.lan_outlined,
+            glyph: StrokeGlyph.networks,
             title: 'No networks',
             message: 'This host reports no Docker networks.',
           ),

@@ -112,6 +112,72 @@ enum StrokeGlyph {
   arrowUp,
   arrowDown,
   returnKey,
+
+  /// Three dots in a column: a row's more button (drawn at stroke 3).
+  more,
+
+  /// A right-pointing triangle: start, resume, unpause.
+  play,
+
+  /// Two bars: pause a container or a log stream.
+  pause,
+
+  /// A rounded square: stop.
+  stop,
+
+  /// A bin with a lid: remove.
+  trash,
+
+  /// A circular arrow: restart, and "Try again".
+  restart,
+
+  /// The restart arrow round a clock's hands: the activity log.
+  history,
+
+  /// A clock face: a time range.
+  clock,
+
+  /// A prompt and a cursor: the container shell.
+  terminal,
+
+  /// A handset: a paired device.
+  phone,
+
+  /// A key: this device's key on the agent (the sidebar footer, logins).
+  key,
+
+  /// Two chain links: a pairing.
+  link,
+
+  /// The chain broken: unpair, revoke.
+  unlink,
+
+  /// A stack of three cylinder slices: volumes.
+  volumes,
+
+  /// Three nodes hung from one bus: networks.
+  networks,
+
+  /// `›`: a row that opens something.
+  chevronRight,
+
+  /// `−`: one fewer (a replica stepper).
+  minus,
+
+  /// Scissors: prune what is unused.
+  prune,
+
+  /// A head and shoulders: a registry username.
+  person,
+
+  /// A monitor: "needs a wider window".
+  monitor,
+
+  /// A struck-through signal: an agent that cannot be reached.
+  offline,
+
+  /// A struck-through bell: a muted alert.
+  bellOff,
 }
 
 /// One design icon at [size] points, coloured from [IconTheme] by default.
@@ -293,7 +359,8 @@ class _StrokePainter extends CustomPainter {
     canvas.scale(scale);
     final Paint paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
+      // The more button's dots are drawn at 3, as every board draws them.
+      ..strokeWidth = glyph == StrokeGlyph.more ? 3 : 2
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..color = color
@@ -349,7 +416,244 @@ class _StrokePainter extends CustomPainter {
     StrokeGlyph.arrowUp => _arrowUp(),
     StrokeGlyph.arrowDown => _arrowDown(),
     StrokeGlyph.returnKey => _returnKey(),
+    StrokeGlyph.more => _more(),
+    StrokeGlyph.play => _play(),
+    StrokeGlyph.pause => _pause(),
+    StrokeGlyph.stop => Path()..addRRect(_r(5, 5, 14, 14, 2)),
+    StrokeGlyph.trash => _trash(),
+    StrokeGlyph.restart => _restart(),
+    StrokeGlyph.history =>
+      _restart()
+        ..moveTo(12, 8)
+        ..lineTo(12, 12)
+        ..lineTo(15, 14),
+    StrokeGlyph.clock =>
+      Path()
+        ..addOval(Rect.fromCircle(center: const Offset(12, 12), radius: 9))
+        ..moveTo(12, 7)
+        ..lineTo(12, 12)
+        ..lineTo(15, 14),
+    StrokeGlyph.terminal => _terminal(),
+    StrokeGlyph.phone => _phone(),
+    StrokeGlyph.key => _key(),
+    StrokeGlyph.link => _link(),
+    StrokeGlyph.unlink => _unlink(),
+    StrokeGlyph.volumes => _volumes(),
+    StrokeGlyph.networks => _networks(),
+    StrokeGlyph.chevronRight => _chevronRight(),
+    StrokeGlyph.minus =>
+      Path()
+        ..moveTo(5, 12)
+        ..lineTo(19, 12),
+    StrokeGlyph.prune => _prune(),
+    StrokeGlyph.person => _person(),
+    StrokeGlyph.monitor => _monitor(),
+    StrokeGlyph.offline => _offline(),
+    StrokeGlyph.bellOff =>
+      _alerts()
+        ..moveTo(3, 3)
+        ..lineTo(21, 21),
   };
+
+  // M12 5h.01M12 12h.01M12 19h.01 (stroke-width 3)
+  static Path _more() => Path()
+    ..moveTo(12, 5)
+    ..lineTo(12.01, 5)
+    ..moveTo(12, 12)
+    ..lineTo(12.01, 12)
+    ..moveTo(12, 19)
+    ..lineTo(12.01, 19);
+
+  // M6 4l14 8-14 8z
+  static Path _play() => Path()
+    ..moveTo(6, 4)
+    ..lineTo(20, 12)
+    ..lineTo(6, 20)
+    ..close();
+
+  // M8 5v14M16 5v14
+  static Path _pause() => Path()
+    ..moveTo(8, 5)
+    ..lineTo(8, 19)
+    ..moveTo(16, 5)
+    ..lineTo(16, 19);
+
+  // M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14
+  static Path _trash() => Path()
+    ..moveTo(3, 6)
+    ..lineTo(21, 6)
+    ..moveTo(8, 6)
+    ..lineTo(8, 4)
+    ..lineTo(16, 4)
+    ..lineTo(16, 6)
+    ..moveTo(6, 6)
+    ..lineTo(7, 20)
+    ..lineTo(17, 20)
+    ..lineTo(18, 6);
+
+  // M3 12a9 9 0 1 0 3-6.7 M3 4v5h5
+  static Path _restart() => Path()
+    ..moveTo(3, 12)
+    ..arcToPoint(
+      const Offset(6, 5.3),
+      radius: const Radius.circular(9),
+      largeArc: true,
+      clockwise: false,
+    )
+    ..moveTo(3, 4)
+    ..lineTo(3, 9)
+    ..lineTo(8, 9);
+
+  // M4 17l6-5-6-5M12 19h8
+  static Path _terminal() => Path()
+    ..moveTo(4, 17)
+    ..lineTo(10, 12)
+    ..lineTo(4, 7)
+    ..moveTo(12, 19)
+    ..lineTo(20, 19);
+
+  // <rect 7 3 10 18 rx2> M11 18h2
+  static Path _phone() => Path()
+    ..addRRect(_r(7, 3, 10, 18, 2))
+    ..moveTo(11, 18)
+    ..lineTo(13, 18);
+
+  // <circle 8 15 r4> M11 12l9-9M16 7l3 3
+  static Path _key() => Path()
+    ..addOval(Rect.fromCircle(center: const Offset(8, 15), radius: 4))
+    ..moveTo(11, 12)
+    ..lineTo(20, 3)
+    ..moveTo(16, 7)
+    ..lineTo(19, 10);
+
+  // M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71
+  // M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71
+  static Path _link() {
+    final _Pen a = _Pen(10, 13)
+      ..arc(7.54, 0.54, clockwise: false, radius: 5)
+      ..line(3, -3)
+      ..arc(-7.07, -7.07, clockwise: false, radius: 5)
+      ..line(-1.72, 1.71);
+    final _Pen b = _Pen(14, 11)
+      ..arc(-7.54, -0.54, clockwise: false, radius: 5)
+      ..line(-3, 3)
+      ..arc(7.07, 7.07, clockwise: false, radius: 5)
+      ..line(1.71, -1.71);
+    return a.path..addPath(b.path, Offset.zero);
+  }
+
+  // The two outer halves of [_link] with a gap between them, and four
+  // short strokes where the links parted.
+  static Path _unlink() {
+    final _Pen a = _Pen(18.84, 12.25)
+      ..line(1.72, -1.71)
+      ..arc(-0.12, -7.07, clockwise: false, radius: 5)
+      ..arc(-6.95, 0, clockwise: false, radius: 5)
+      ..line(-1.72, 1.71);
+    final _Pen b = _Pen(5.17, 11.75)
+      ..line(-1.71, 1.71)
+      ..arc(0.12, 7.07, clockwise: false, radius: 5)
+      ..arc(6.95, 0, clockwise: false, radius: 5)
+      ..line(1.71, -1.71);
+    return a.path
+      ..addPath(b.path, Offset.zero)
+      ..moveTo(8, 2)
+      ..lineTo(8, 5)
+      ..moveTo(2, 8)
+      ..lineTo(5, 8)
+      ..moveTo(16, 22)
+      ..lineTo(16, 19)
+      ..moveTo(22, 16)
+      ..lineTo(19, 16);
+  }
+
+  // <ellipse 12 5 rx8 ry2.5>, walls to y 19 and two bands between: the
+  // Resources cylinder cut into three slices.
+  static Path _volumes() {
+    final Path path = Path()
+      ..addOval(
+        Rect.fromCenter(center: const Offset(12, 5), width: 16, height: 5),
+      )
+      ..moveTo(4, 5)
+      ..lineTo(4, 19)
+      ..moveTo(20, 5)
+      ..lineTo(20, 19);
+    for (final double y in <double>[9.7, 14.3, 19]) {
+      path
+        ..moveTo(4, y)
+        ..cubicTo(4, y + 1.4, 7.6, y + 2.5, 12, y + 2.5)
+        ..cubicTo(16.4, y + 2.5, 20, y + 1.4, 20, y);
+    }
+    return path;
+  }
+
+  // <rect 9 3 6 5 rx1.5> <rect 2 16 6 5> <rect 16 16 6 5>
+  // M12 8v4 M5 16v-4h14v4
+  static Path _networks() => Path()
+    ..addRRect(_r(9, 3, 6, 5, 1.5))
+    ..addRRect(_r(2, 16, 6, 5, 1.5))
+    ..addRRect(_r(16, 16, 6, 5, 1.5))
+    ..moveTo(12, 8)
+    ..lineTo(12, 12)
+    ..moveTo(5, 16)
+    ..lineTo(5, 12)
+    ..lineTo(19, 12)
+    ..lineTo(19, 16);
+
+  // M9 18l6-6-6-6
+  static Path _chevronRight() => Path()
+    ..moveTo(9, 18)
+    ..lineTo(15, 12)
+    ..lineTo(9, 6);
+
+  // <circle 6 6 r3> <circle 6 18 r3> M20 4L8.12 15.88 M14.47 14.48L20 20
+  // M8.12 8.12L12 12
+  static Path _prune() => Path()
+    ..addOval(Rect.fromCircle(center: const Offset(6, 6), radius: 3))
+    ..addOval(Rect.fromCircle(center: const Offset(6, 18), radius: 3))
+    ..moveTo(20, 4)
+    ..lineTo(8.12, 15.88)
+    ..moveTo(14.47, 14.48)
+    ..lineTo(20, 20)
+    ..moveTo(8.12, 8.12)
+    ..lineTo(12, 12);
+
+  // <circle 12 8 r4> M4 21a8 8 0 0 1 16 0
+  static Path _person() => Path()
+    ..addOval(Rect.fromCircle(center: const Offset(12, 8), radius: 4))
+    ..moveTo(4, 21)
+    ..arcToPoint(
+      const Offset(20, 21),
+      radius: const Radius.circular(8),
+      clockwise: true,
+    );
+
+  // <rect 3 4 18 12 rx2> M8 20h8 M12 16v4
+  static Path _monitor() => Path()
+    ..addRRect(_r(3, 4, 18, 12, 2))
+    ..moveTo(8, 20)
+    ..lineTo(16, 20)
+    ..moveTo(12, 16)
+    ..lineTo(12, 20);
+
+  // M12 20h.01 M8.5 16.5a5 5 0 0 1 7 0 M5 13a10 10 0 0 1 14 0 M3 3l18 18
+  static Path _offline() => Path()
+    ..moveTo(12, 20)
+    ..lineTo(12.01, 20)
+    ..moveTo(8.5, 16.5)
+    ..arcToPoint(
+      const Offset(15.5, 16.5),
+      radius: const Radius.circular(5),
+      clockwise: true,
+    )
+    ..moveTo(5, 13)
+    ..arcToPoint(
+      const Offset(19, 13),
+      radius: const Radius.circular(10),
+      clockwise: true,
+    )
+    ..moveTo(3, 3)
+    ..lineTo(21, 21);
 
   // <circle 11 11 r7> M21 21l-4.3-4.3
   static Path _search() => Path()

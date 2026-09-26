@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/models.dart';
 import '../../data/providers.dart';
+import '../../data/this_device.dart';
+import '../../layout/layout.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/tokens.dart';
 import '../../widgets/actions.dart';
 import '../../widgets/buttons.dart';
 import '../../widgets/context_menu.dart';
+import '../../widgets/desktop.dart';
 import '../../widgets/page.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/sheets.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/surfaces.dart';
 import '../../widgets/stroke_icons.dart';
+import '../../widgets/table.dart';
 
 /// What each role may do, in the words the role sheet uses.
 String roleSummary(ServerRole role) => switch (role) {
@@ -28,6 +33,12 @@ String roleSummary(ServerRole role) => switch (role) {
 bool isLastAdmin(DeviceInfo device, List<DeviceInfo> devices) =>
     device.role.isAdmin &&
     devices.where((DeviceInfo d) => d.role.isAdmin).length == 1;
+
+/// What a device is called on screen: this device by the hardware's own name
+/// ([thisDeviceLabel], the same words the sidebar footer and the activity
+/// sentences use), every other one by the name it was paired under.
+String deviceLabel(DeviceInfo device) =>
+    device.isSelf ? thisDeviceLabel() : device.name;
 
 /// `Last seen 1 day ago · push on`, or `last seen just now` after the
 /// "This device" marker.
@@ -61,7 +72,7 @@ class DevicesScreen extends ConsumerWidget {
       () => ref
           .read(agentApiProvider(serverId))
           .updateDevice(device.id, role: role),
-      success: '${device.name} is now ${role.label.toLowerCase()}',
+      success: '${deviceLabel(device)} is now ${role.label.toLowerCase()}',
     );
     if (!ok) return;
     ref.invalidate(devicesProvider(serverId));
@@ -77,16 +88,16 @@ class DevicesScreen extends ConsumerWidget {
       context,
       ref,
       RiskyAction(
-        title: 'Revoke ${device.name}?',
+        title: 'Revoke ${deviceLabel(device)}?',
         subtitle: '$serverId · ${device.role.label}',
         explanation:
             'That device\'s key stops working immediately. It has to be '
             'paired again with a fresh token to come back.',
         requestLine: 'DELETE /v1/devices/${device.id}',
         confirmLabel: 'Revoke device',
-        icon: Icons.link_off,
+        glyph: StrokeGlyph.unlink,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
-        target: device.name,
+        target: deviceLabel(device),
       ),
     );
     if (!outcome.confirmed || !context.mounted) return;
@@ -96,7 +107,7 @@ class DevicesScreen extends ConsumerWidget {
       () => ref
           .read(agentApiProvider(serverId))
           .removeDevice(device.id, confirmed: outcome.confirmation),
-      success: '${device.name} revoked',
+      success: '${deviceLabel(device)} revoked',
     );
     if (ok) ref.invalidate(devicesProvider(serverId));
   }
@@ -125,6 +136,29 @@ class DevicesScreen extends ConsumerWidget {
     }
   }
 
+  /// Change role and Revoke, for the right-click menu on a row.
+  List<MenuAction> _menu(
+    BuildContext context,
+    WidgetRef ref,
+    DeviceInfo device,
+    List<DeviceInfo> all,
+    bool isAdmin,
+  ) => <MenuAction>[
+    for (final ServerRole role in ServerRole.values)
+      MenuAction(
+        label: 'Make ${role.label.toLowerCase()}',
+        enabled: isAdmin && role != device.role && !isLastAdmin(device, all),
+        onSelected: () => _setRole(context, ref, device, role),
+      ),
+    MenuAction(
+      label: 'Revoke',
+      glyph: StrokeGlyph.unlink,
+      danger: true,
+      enabled: isAdmin && !isLastAdmin(device, all),
+      onSelected: () => _revoke(context, ref, device),
+    ),
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AsyncValue<List<DeviceInfo>> devices = ref.watch(
@@ -132,29 +166,70 @@ class DevicesScreen extends ConsumerWidget {
     );
     final bool isAdmin = ref.watch(roleProvider(serverId)).canManageDevices;
     final int? count = devices.valueOrNull?.length;
+    final String subtitle = count == null
+        ? 'Devices that hold a key for $serverId'
+        : '$count device${count == 1 ? '' : 's'} hold'
+              '${count == 1 ? 's' : ''} a key for $serverId';
+    const EmptyView empty = EmptyView(
+      glyph: StrokeGlyph.phone,
+      title: 'No devices',
+      message: 'The agent reports no paired devices.',
+    );
+    const Widget note = InfoNote(
+      glyph: StrokeGlyph.shield,
+      text:
+          'The first device to pair is admin and every later one is an '
+          "operator. The last admin can't be demoted or revoked, so the "
+          'host is never locked out of its own agent.',
+    );
+
+    // DesktopDevices: left-aligned under the page header with the way back
+    // to Server settings, and the devices as a table.
+    if (WindowClass.of(context).usesDesktopExtras) {
+      return DesktopPage(
+        children: <Widget>[
+          DesktopHeader(
+            eyebrow: DesktopBackLink(
+              label: 'Server settings',
+              onTap: () => context.go('/s/$serverId/settings'),
+            ),
+            title: 'Paired devices',
+            subtitle: subtitle,
+          ),
+          AsyncSection<List<DeviceInfo>>(
+            value: devices,
+            onRetry: () => ref.invalidate(devicesProvider(serverId)),
+            loadingRows: 3,
+            loadingRowHeight: 46,
+            isEmpty: (List<DeviceInfo> list) => list.isEmpty,
+            empty: empty,
+            builder: (List<DeviceInfo> list) => DeviceTable(
+              devices: list,
+              onActions: isAdmin
+                  ? (DeviceInfo device) =>
+                        _openActions(context, ref, device, list)
+                  : null,
+              menu: (DeviceInfo device) =>
+                  _menu(context, ref, device, list, isAdmin),
+            ),
+          ),
+          note,
+        ],
+      );
+    }
 
     return PushedPage(
       gap: 14,
       children: <Widget>[
         const BackLink('Settings'),
-        ScreenHeader(
-          title: 'Paired devices',
-          subtitle: count == null
-              ? 'Devices that hold a key for $serverId'
-              : '$count device${count == 1 ? '' : 's'} hold'
-                    '${count == 1 ? 's' : ''} a key for $serverId',
-        ),
+        ScreenHeader(title: 'Paired devices', subtitle: subtitle),
         AsyncSection<List<DeviceInfo>>(
           value: devices,
           onRetry: () => ref.invalidate(devicesProvider(serverId)),
           loadingRows: 3,
           loadingRowHeight: 66,
           isEmpty: (List<DeviceInfo> list) => list.isEmpty,
-          empty: const EmptyView(
-            icon: Icons.phone_iphone,
-            title: 'No devices',
-            message: 'The agent reports no paired devices.',
-          ),
+          empty: empty,
           builder: (List<DeviceInfo> list) => RowGroup(
             trailingPadding: isAdmin ? 6 : 16,
             children: <Widget>[
@@ -164,35 +239,104 @@ class DevicesScreen extends ConsumerWidget {
                   onActions: isAdmin
                       ? () => _openActions(context, ref, device, list)
                       : null,
-                  menu: () => <MenuAction>[
-                    for (final ServerRole role in ServerRole.values)
-                      MenuAction(
-                        label: 'Make ${role.label.toLowerCase()}',
-                        enabled:
-                            isAdmin &&
-                            role != device.role &&
-                            !isLastAdmin(device, list),
-                        onSelected: () => _setRole(context, ref, device, role),
-                      ),
-                    MenuAction(
-                      label: 'Revoke',
-                      icon: Icons.link_off,
-                      danger: true,
-                      enabled: isAdmin && !isLastAdmin(device, list),
-                      onSelected: () => _revoke(context, ref, device),
-                    ),
-                  ],
+                  menu: () => _menu(context, ref, device, list, isAdmin),
                 ),
             ],
           ),
         ),
-        const InfoNote(
-          glyph: StrokeGlyph.shield,
-          text:
-              'The first device to pair is admin and every later one is an '
-              "operator. The last admin can't be demoted or revoked, so the "
-              'host is never locked out of its own agent.',
+        note,
+      ],
+    );
+  }
+}
+
+/// DesktopDevices' table: Device, Role, Last seen, Push and the more button
+/// that opens the same actions dialog as the phone's sheet. A right-click on
+/// a row offers the role changes and Revoke as a menu.
+class DeviceTable extends StatelessWidget {
+  const DeviceTable({
+    super.key,
+    required this.devices,
+    required this.onActions,
+    required this.menu,
+  });
+
+  final List<DeviceInfo> devices;
+
+  /// Null for a device that may not manage devices: no more button and no
+  /// menu, as on the phone.
+  final void Function(DeviceInfo device)? onActions;
+  final List<MenuAction> Function(DeviceInfo device) menu;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppTokens t = context.tokens;
+    return DataTableView<DeviceInfo>(
+      rows: devices,
+      rowMenuButton: false,
+      actions: onActions == null ? null : menu,
+      footer: onActions == null
+          ? null
+          : Text(
+              'Right-click a row to change its role or revoke it',
+              style: TextStyle(fontSize: 12.5, color: t.mutedText),
+            ),
+      columns: <TableColumn<DeviceInfo>>[
+        TableColumn<DeviceInfo>(
+          label: 'Device',
+          cell: (BuildContext c, DeviceInfo d) => Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Flexible(child: CellText(deviceLabel(d), bold: true)),
+              if (d.isSelf) ...<Widget>[
+                const SizedBox(width: 10),
+                Text(
+                  'This device',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: t.accent,
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
+        TableColumn<DeviceInfo>(
+          label: 'Role',
+          width: 130,
+          cell: (BuildContext c, DeviceInfo d) => StatusPill(
+            d.role.label,
+            tone: d.role.isAdmin ? PillTone.accent : PillTone.neutral,
+          ),
+        ),
+        TableColumn<DeviceInfo>(
+          label: 'Last seen',
+          width: 150,
+          cell: (BuildContext c, DeviceInfo d) =>
+              CellText(d.lastSeen, muted: true),
+        ),
+        TableColumn<DeviceInfo>(
+          label: 'Push',
+          width: 90,
+          cell: (BuildContext c, DeviceInfo d) =>
+              CellText(d.hasPushToken ? 'On' : 'Off', muted: !d.hasPushToken),
+        ),
+        if (onActions != null)
+          TableColumn<DeviceInfo>(
+            label: '',
+            width: 36,
+            numeric: true,
+            cell: (BuildContext c, DeviceInfo d) => DoomIconButton(
+              glyph: StrokeGlyph.more,
+              semanticLabel: 'Actions for ${deviceLabel(d)}',
+              size: 32,
+              radius: 8,
+              filled: false,
+              foreground: t.mutedText,
+              onPressed: () => onActions!(d),
+            ),
+          ),
       ],
     );
   }
@@ -224,7 +368,7 @@ class _DeviceRow extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    device.name,
+                    deviceLabel(device),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.rowTitle.copyWith(color: t.text),
@@ -259,8 +403,8 @@ class _DeviceRow extends StatelessWidget {
             if (onActions != null) ...<Widget>[
               const SizedBox(width: 8),
               DoomIconButton(
-                icon: Icons.more_vert,
-                semanticLabel: 'Actions for ${device.name}',
+                glyph: StrokeGlyph.more,
+                semanticLabel: 'Actions for ${deviceLabel(device)}',
                 size: 44,
                 radius: 12,
                 filled: false,
@@ -315,7 +459,7 @@ class DeviceActionsBody extends StatelessWidget {
                 color: t.iconButtonFill,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Icon(Icons.smartphone, size: 22, color: t.text),
+              child: StrokeIcon(StrokeGlyph.phone, size: 22, color: t.text),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -324,7 +468,7 @@ class DeviceActionsBody extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   Text(
-                    device.name,
+                    deviceLabel(device),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.sheetTitle.copyWith(color: t.text),
@@ -348,7 +492,7 @@ class DeviceActionsBody extends StatelessWidget {
             const SectionHeader('Role'),
             const SizedBox(height: 8),
             Semantics(
-              label: 'Role for ${device.name}',
+              label: 'Role for ${deviceLabel(device)}',
               container: true,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),

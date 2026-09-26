@@ -498,7 +498,7 @@ class OfflineNotice extends StatelessWidget {
       ),
       child: Row(
         children: <Widget>[
-          Icon(Icons.wifi_off, size: 18, color: t.danger),
+          StrokeIcon(StrokeGlyph.offline, size: 18, color: t.danger),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -555,7 +555,7 @@ class NeedsAWiderWindow extends StatelessWidget {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
               child: EmptyView(
-                icon: Icons.desktop_windows_outlined,
+                glyph: StrokeGlyph.monitor,
                 title: '$title needs a wider window',
                 message:
                     'Make the window at least 1100 points wide to use it, or '

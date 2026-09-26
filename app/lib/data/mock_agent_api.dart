@@ -135,7 +135,7 @@ class MockAgentApi implements AgentApi {
   Future<MeInfo?> me() => _call(
     () => MeInfo(
       deviceId: world.server.deviceId,
-      deviceName: 'This phone',
+      deviceName: world.selfDeviceName,
       role: world.server.role,
       certFingerprint: world.server.certFingerprint,
       pairedDevices: world.devices.length,

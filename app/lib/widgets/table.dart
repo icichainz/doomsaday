@@ -147,7 +147,7 @@ class DataTableViewState<T> extends State<DataTableView<T>> {
     width: 36,
     cell: (BuildContext context, T row) => Builder(
       builder: (BuildContext anchor) => DoomIconButton(
-        icon: Icons.more_vert,
+        glyph: StrokeGlyph.more,
         semanticLabel: 'Row actions',
         size: 30,
         radius: 8,

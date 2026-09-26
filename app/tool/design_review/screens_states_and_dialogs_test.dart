@@ -15,12 +15,14 @@ import 'dart:io';
 import 'package:doomsaday/data/models.dart';
 import 'package:doomsaday/data/mock_seed.dart';
 import 'package:doomsaday/data/preferences.dart';
+import 'package:doomsaday/data/providers.dart';
 import 'package:doomsaday/data/servers_repository.dart';
 import 'package:doomsaday/edition/edition.dart';
 import 'package:doomsaday/edition/pro_badge.dart';
 import 'package:doomsaday/widgets/sheets.dart';
 import 'package:doomsaday/widgets/surfaces.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'harness.dart';
 
@@ -30,6 +32,28 @@ ServersRepository _nothing() => ServersRepository.pairedMocks(
   <MockWorld>[],
   maxServers: currentEdition.maxServers,
 );
+
+/// Everything an Overview asks its agent for, held open: futures that never
+/// complete and a stats stream that never emits. No timers, so nothing is
+/// left pending when the board is torn down.
+final List<Override> _answersNeverArrive = <Override>[
+  systemProvider.overrideWith(
+    (ref, String id) => Completer<SystemInfo>().future,
+  ),
+  systemStatsProvider.overrideWith(
+    (ref, String id) => StreamController<SystemStats>().stream,
+  ),
+  alertsProvider.overrideWith(
+    (ref, String id) => Completer<List<AlertInfo>>().future,
+  ),
+  activityProvider.overrideWith(
+    (ref, String id) => Completer<List<ActivityEntry>>().future,
+  ),
+  containersProvider.overrideWith(
+    (ref, String id) => Completer<List<ContainerSummary>>().future,
+  ),
+  meProvider.overrideWith((ref, String id) => Completer<MeInfo?>().future),
+];
 
 /// A fixed "now" so the elapsed time reads the same on every run.
 final DateTime _now = DateTime(2026, 9, 25, 12);
@@ -113,12 +137,15 @@ void main() {
         await go(t, '/s/backup-nas/overview');
       }, themeMode: mode);
     }
-    // The skeleton: the Servers screen two frames after launch, before the
-    // mock agents have answered. Paired against the `LoadingError` board.
+    // The skeleton: the same screen as the board, backup-nas's Overview,
+    // while its answers are still on the way. The mock agent would answer
+    // (with "unreachable") within a frame or two of the page opening, before
+    // its transition has even finished, so here the answers never come:
+    // the page settles and is shot in exactly the state a slow agent leaves
+    // it in. Paired against the `LoadingError` board.
     board('LoadingErrorLoading', kPhone, (WidgetTester t) async {
-      await t.pump(const Duration(milliseconds: 16));
-      await t.pump(const Duration(milliseconds: 16));
-    }, settleFirst: false);
+      await go(t, '/s/backup-nas/overview');
+    }, overrides: _answersNeverArrive);
   });
 
   group('jobs', () {

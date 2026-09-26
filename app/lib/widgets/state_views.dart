@@ -225,16 +225,10 @@ class _SkeletonLine extends StatelessWidget {
 
 /// A button on an empty state. At most two per state.
 class EmptyAction {
-  const EmptyAction(
-    this.label, {
-    required this.onPressed,
-    this.icon,
-    this.glyph,
-  });
+  const EmptyAction(this.label, {required this.onPressed, this.glyph});
 
   final String label;
   final VoidCallback onPressed;
-  final IconData? icon;
   final StrokeGlyph? glyph;
 }
 
@@ -246,20 +240,17 @@ enum EmptyTone { neutral, healthy }
 class EmptyView extends StatelessWidget {
   const EmptyView({
     super.key,
-    this.glyph,
-    this.icon,
+    required this.glyph,
     required this.title,
     required this.message,
     this.detail,
     this.tone = EmptyTone.neutral,
     this.primary,
     this.secondary,
-  }) : assert(glyph != null || icon != null, 'an empty state has an icon');
+  });
 
-  /// The design's own stroke icon; [icon] is the fallback for the few states
-  /// the stroke set has no glyph for.
-  final StrokeGlyph? glyph;
-  final IconData? icon;
+  /// The design's own stroke icon, in the 56 px tile.
+  final StrokeGlyph glyph;
   final String title;
   final String message;
 
@@ -298,9 +289,7 @@ class EmptyView extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
               border: healthy ? null : Border.all(color: t.strongBorder),
             ),
-            child: glyph != null
-                ? StrokeIcon(glyph!, size: 24, color: iconColor)
-                : Icon(icon, size: 24, color: iconColor),
+            child: StrokeIcon(glyph, size: 24, color: iconColor),
           ),
           const SizedBox(height: 14),
           Text(
@@ -333,7 +322,6 @@ class EmptyView extends StatelessWidget {
             const SizedBox(height: 20),
             DoomButton(
               primary!.label,
-              icon: primary!.icon,
               glyph: primary!.glyph,
               tone: ButtonTone.primary,
               expand: true,
@@ -345,7 +333,6 @@ class EmptyView extends StatelessWidget {
               const SizedBox(height: 10),
               DoomButton(
                 secondary!.label,
-                icon: secondary!.icon,
                 glyph: secondary!.glyph,
                 expand: true,
                 height: 48,
@@ -357,7 +344,6 @@ class EmptyView extends StatelessWidget {
             const SizedBox(height: 20),
             DoomButton(
               secondary!.label,
-              icon: secondary!.icon,
               glyph: secondary!.glyph,
               onPressed: secondary!.onPressed,
             ),

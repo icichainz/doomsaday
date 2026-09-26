@@ -13,6 +13,7 @@ import '../../widgets/actions.dart';
 import '../../widgets/context_menu.dart';
 import '../../widgets/notify.dart';
 import '../../widgets/sheets.dart';
+import '../../widgets/stroke_icons.dart';
 
 /// What stopping this container costs, in the board's words:
 /// `Port 8080 stops answering, and 2 containers in web-platform depend on it.`
@@ -84,7 +85,7 @@ Future<void> startOrStopContainer(
           '${stopImpactSentence(impact, container.stack)}',
       requestLine: 'POST /v1/containers/${container.id}/stop?timeout=10',
       confirmLabel: 'Stop container',
-      icon: Icons.stop,
+      glyph: StrokeGlyph.stop,
       requireFingerprint: riskyNeedsFingerprint(ref, serverId),
       target: container.name,
     ),
@@ -123,29 +124,29 @@ List<MenuAction> containerMenuActions(
   final bool running = container.state.isRunning;
   return <MenuAction>[
     if (onLogs != null)
-      MenuAction(label: 'Logs', icon: Icons.notes, onSelected: onLogs),
+      MenuAction(label: 'Logs', glyph: StrokeGlyph.logWall, onSelected: onLogs),
     if (onLogWall != null)
       MenuAction(
         label: 'Open in log wall',
-        icon: Icons.grid_view_outlined,
+        glyph: StrokeGlyph.fleet,
         onSelected: onLogWall,
       ),
     MenuAction(
       label: running ? 'Stop' : 'Start',
-      icon: running ? Icons.stop : Icons.play_arrow,
+      glyph: running ? StrokeGlyph.stop : StrokeGlyph.play,
       enabled: role.canOperate,
       danger: running,
       onSelected: () => startOrStopContainer(context, ref, serverId, container),
     ),
     MenuAction(
       label: 'Restart',
-      icon: Icons.refresh,
+      glyph: StrokeGlyph.restart,
       enabled: role.canOperate && running,
       onSelected: () => restartContainer(context, ref, serverId, container),
     ),
     MenuAction(
       label: 'Copy container id',
-      icon: Icons.copy_all_outlined,
+      glyph: StrokeGlyph.copy,
       onSelected: () {
         Clipboard.setData(ClipboardData(text: container.id));
         notify(context, 'Container id copied');

@@ -280,7 +280,7 @@ class _ContainerRow extends ConsumerWidget {
             const SizedBox(width: 8),
             DoomIconButton(
               // The board draws an outlined stop square, not a filled one.
-              icon: running ? Icons.stop_outlined : Icons.play_arrow_outlined,
+              glyph: running ? StrokeGlyph.stop : StrokeGlyph.play,
               semanticLabel: '${running ? 'Stop' : 'Start'} ${container.name}',
               size: 44,
               radius: 12,

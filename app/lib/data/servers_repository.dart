@@ -17,6 +17,7 @@ import 'mock_seed.dart';
 import 'models.dart';
 import 'pinning.dart';
 import 'server_store.dart';
+import 'this_device.dart';
 
 /// What the pairing screen shows before the fingerprint is pinned: trust on
 /// first use, confirmed by a person.
@@ -269,7 +270,7 @@ class ServersRepository {
     required String name,
     required String agentUrl,
     required String token,
-    String deviceName = 'This phone',
+    String? deviceName,
   }) async {
     _refuseWhenFull();
     if (_store == null) {
@@ -311,7 +312,7 @@ class ServersRepository {
         client: tofu.client,
         baseUrl: base,
         token: token.trim(),
-        deviceName: deviceName,
+        deviceName: deviceName ?? thisDeviceLabel(),
       );
       final String reported = body['cert_fingerprint'] as String? ?? '';
       final String presented = tofu.presentedFingerprint ?? '';
@@ -488,7 +489,7 @@ class ServersRepository {
     required String name,
     required String agentUrl,
     required String token,
-    String deviceName = 'This phone',
+    String? deviceName,
   }) async {
     final PairPreview preview = await beginPairing(
       name: name,

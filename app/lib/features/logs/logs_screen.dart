@@ -265,7 +265,7 @@ class _LogsViewState extends ConsumerState<LogsView> {
           notify(context, 'Range picking arrives with the real agent build'),
     );
     final Widget rangeIcon = DoomIconButton(
-      icon: Icons.schedule,
+      glyph: StrokeGlyph.clock,
       semanticLabel: 'Last 15 min',
       tooltip: 'Last 15 min',
       size: 36,
@@ -277,7 +277,7 @@ class _LogsViewState extends ConsumerState<LogsView> {
     );
     final Widget pause = desktop
         ? DoomIconButton(
-            icon: _paused ? Icons.play_arrow : Icons.pause,
+            glyph: _paused ? StrokeGlyph.play : StrokeGlyph.pause,
             semanticLabel: _paused ? 'Resume live logs' : 'Pause live logs',
             size: 36,
             radius: 10,
@@ -287,7 +287,7 @@ class _LogsViewState extends ConsumerState<LogsView> {
           )
         : DoomButton(
             _paused ? 'Resume' : 'Pause',
-            icon: _paused ? Icons.play_arrow : Icons.pause,
+            glyph: _paused ? StrokeGlyph.play : StrokeGlyph.pause,
             height: 48,
             radius: 14,
             onPressed: () => setState(() => _paused = !_paused),

@@ -318,9 +318,16 @@ class _SidebarRowState extends State<SidebarRow> {
   Widget build(BuildContext context) {
     final AppTokens t = context.tokens;
     final Color foreground = widget.selected ? t.accent : t.codeText;
+    // D1 draws the current destination in the accent on the icon-button
+    // fill, and the current server (a dot, not a glyph) in plain text on the
+    // surface colour.
+    final bool server = widget.dotColor != null;
     final Color? fill = widget.selected
-        ? t.iconButtonFill
+        ? (server ? t.surface : t.iconButtonFill)
         : (_hover ? t.surface : null);
+    final Color label = widget.selected
+        ? (server ? t.text : t.accent)
+        : t.codeText;
     return Semantics(
       button: true,
       selected: widget.selected,
@@ -364,7 +371,7 @@ class _SidebarRowState extends State<SidebarRow> {
                         fontWeight: widget.selected
                             ? FontWeight.w600
                             : FontWeight.w500,
-                        color: widget.selected ? t.text : t.codeText,
+                        color: label,
                       ),
                     ),
                   ),
@@ -471,7 +478,7 @@ class _Footer extends ConsumerWidget {
       ),
       child: Row(
         children: <Widget>[
-          Icon(Icons.link, size: 15, color: t.mutedText),
+          StrokeIcon(StrokeGlyph.key, size: 15, color: t.mutedText),
           const SizedBox(width: 10),
           Expanded(
             child: Text(

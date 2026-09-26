@@ -46,7 +46,7 @@ class ServerSettingsScreen extends ConsumerWidget {
             'promote another one first.',
         requestLine: 'DELETE /v1/devices/${server.deviceId}',
         confirmLabel: 'Unpair server',
-        icon: Icons.link_off,
+        glyph: StrokeGlyph.unlink,
         requireFingerprint: riskyNeedsFingerprint(ref, serverId),
         target: server.name,
       ),
@@ -280,7 +280,11 @@ class ServerSettingsScreen extends ConsumerWidget {
             label: 'Read-only on $device',
             description: role == ServerRole.viewer
                 ? 'On. Another admin has to change it back.'
-                : 'Sets this device to the viewer role on the agent',
+                // One line at 390 on the phone; the desktop row has room
+                // for the whole sentence (DesktopSettings).
+                : desktop
+                ? 'Sets this device to the viewer role on the agent'
+                : 'Viewer role on the agent',
             minHeight: desktop ? 56 : null,
             value: role == ServerRole.viewer,
             // Turning it off is the agent's business, not this device's.
@@ -335,7 +339,7 @@ class ServerSettingsScreen extends ConsumerWidget {
         switches,
         DoomButton(
           'Unpair this server',
-          tone: ButtonTone.danger,
+          tone: ButtonTone.dangerOutline,
           height: 48,
           radius: 16,
           expand: true,
@@ -390,7 +394,7 @@ class _UnpairCard extends StatelessWidget {
             'Unpair…',
             height: context.density.cardButton,
             radius: context.density.cardButtonRadius,
-            tone: ButtonTone.danger,
+            tone: ButtonTone.dangerOutline,
             onPressed: onUnpair,
           ),
         ],

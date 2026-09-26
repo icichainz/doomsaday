@@ -86,8 +86,8 @@ class AlertsScreen extends ConsumerWidget {
                 child: Row(
                   children: <Widget>[
                     if (alert.state == AlertState.muted)
-                      Icon(
-                        Icons.notifications_off_outlined,
+                      StrokeIcon(
+                        StrokeGlyph.bellOff,
                         size: 20,
                         color: t.mutedText,
                       )
@@ -415,7 +415,7 @@ class _Rules extends ConsumerWidget {
           loadingRowHeight: 46,
           isEmpty: (List<AlertRule> list) => list.isEmpty,
           empty: const EmptyView(
-            icon: Icons.rule,
+            glyph: StrokeGlyph.alerts,
             title: 'No rules',
             message: 'This agent reports no built-in alert rules.',
           ),
@@ -487,7 +487,7 @@ class _RulesTable extends ConsumerWidget {
           loadingRowHeight: 54,
           isEmpty: (List<AlertRule> list) => list.isEmpty,
           empty: const EmptyView(
-            icon: Icons.rule,
+            glyph: StrokeGlyph.alerts,
             title: 'No rules',
             message: 'This agent reports no built-in alert rules.',
           ),

@@ -179,12 +179,9 @@ class SectionHeader extends StatelessWidget {
 
 /// Shaded note with a leading icon, used on Pair and Registries.
 class InfoNote extends StatelessWidget {
-  const InfoNote({super.key, this.icon, this.glyph, required this.text})
-    : assert(icon != null || glyph != null, 'a note has an icon');
+  const InfoNote({super.key, required this.glyph, required this.text});
 
-  /// A Material icon, only where the stroke set has no [glyph] for it.
-  final IconData? icon;
-  final StrokeGlyph? glyph;
+  final StrokeGlyph glyph;
   final String text;
 
   @override
@@ -200,10 +197,7 @@ class InfoNote extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          if (glyph != null)
-            StrokeIcon(glyph!, size: 20, color: t.accent)
-          else
-            Icon(icon, size: 20, color: t.accent),
+          StrokeIcon(glyph, size: 20, color: t.accent),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -646,7 +640,7 @@ class NavRow extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Icon(Icons.chevron_right, size: 16, color: t.mutedText),
+            StrokeIcon(StrokeGlyph.chevronRight, size: 16, color: t.mutedText),
           ],
         ),
       ),

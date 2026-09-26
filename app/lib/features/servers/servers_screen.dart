@@ -315,8 +315,8 @@ class _ServerCardView extends StatelessWidget {
                   color: online ? t.accentTint : t.dangerTint,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
-                  Icons.dns_outlined,
+                child: StrokeIcon(
+                  StrokeGlyph.servers,
                   size: 22,
                   color: online ? t.accent : t.danger,
                 ),

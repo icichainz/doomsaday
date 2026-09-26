@@ -315,7 +315,7 @@ class _ExecViewState extends ConsumerState<ExecView> {
               ),
               DoomButton(
                 'Open again',
-                icon: Icons.refresh,
+                glyph: StrokeGlyph.restart,
                 height: rowHeight,
                 radius: 12,
                 onPressed: _connect,

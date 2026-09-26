@@ -11,6 +11,7 @@ import 'package:doomsaday/features/settings/server_settings_screen.dart';
 import 'package:doomsaday/theme/app_theme.dart';
 import 'package:doomsaday/widgets/sheets.dart';
 import 'package:doomsaday/widgets/state_views.dart';
+import 'package:doomsaday/widgets/stroke_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -76,7 +77,7 @@ void main() {
     await tester.pumpWidget(
       _host(
         EmptyView(
-          icon: Icons.search,
+          glyph: StrokeGlyph.search,
           title: 'No matching containers',
           message: 'Nothing here matches that search.',
           secondary: EmptyAction('Clear filter', onPressed: () => cleared++),
