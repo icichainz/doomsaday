@@ -172,7 +172,7 @@ void main() {
     await api.cancelJob(job.id);
     final Job done = await last;
     expect(done.status, JobStatus.canceled);
-    expect(done.errorCode, 'job_canceled');
+    expect(done.errorCode, 'job_cancelled');
     api.dispose();
   });
 

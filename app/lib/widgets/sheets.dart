@@ -856,7 +856,7 @@ class _JobProgressBodyState extends State<JobProgressBody> {
       ),
       (_, true) => Text(
         _job.errorCode ??
-            (status == JobStatus.canceled ? 'job_canceled' : 'failed'),
+            (status == JobStatus.canceled ? 'job_cancelled' : 'failed'),
         style: AppText.monoSmall.copyWith(color: t.danger),
       ),
       _ => Text(

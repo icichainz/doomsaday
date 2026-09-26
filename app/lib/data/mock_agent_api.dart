@@ -1327,7 +1327,7 @@ class MockAgentApi implements AgentApi {
     final Job canceled = current.copyWith(
       status: JobStatus.canceled,
       error: 'job was canceled',
-      errorCode: 'job_canceled',
+      errorCode: 'job_cancelled',
       finishedAt: DateTime.now(),
     );
     _jobs[id] = canceled;

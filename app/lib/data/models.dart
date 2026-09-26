@@ -1977,10 +1977,13 @@ enum JobStatus {
   failed,
   canceled;
 
-  static JobStatus parse(String value) => JobStatus.values.firstWhere(
-    (JobStatus s) => s.name == value,
-    orElse: () => JobStatus.running,
-  );
+  /// The agent spells the terminal status `cancelled`; the enum keeps `canceled`.
+  static JobStatus parse(String value) => value == 'cancelled'
+      ? JobStatus.canceled
+      : JobStatus.values.firstWhere(
+          (JobStatus s) => s.name == value,
+          orElse: () => JobStatus.running,
+        );
 
   bool get isFinished => this != JobStatus.queued && this != JobStatus.running;
 }
