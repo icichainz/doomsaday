@@ -97,12 +97,117 @@ func TestJobCancel(t *testing.T) {
 		return h.Ctx.Err()
 	})
 	<-started
-	if !m.Cancel(job.ID) {
-		t.Fatal("cancel returned false")
+	snap, err := m.Cancel(job.ID, "dev1")
+	if err != nil {
+		t.Fatalf("cancel = %v", err)
+	}
+	if !snap.CancelRequested {
+		t.Error("the snapshot does not say a cancel was requested")
 	}
 	final := waitFinished(t, m, job.ID)
-	if final.Status != StatusCanceled {
+	if final.Status != StatusCancelled {
 		t.Fatalf("status = %q", final.Status)
+	}
+	if final.Result["cancelled"] != true || final.Result["cancelled_by"] != "dev1" {
+		t.Fatalf("result = %v", final.Result)
+	}
+	if final.Error == nil || final.Error.Code != CodeCancelled {
+		t.Fatalf("error = %+v", final.Error)
+	}
+	if !final.Status.Finished() {
+		t.Error("cancelled is not terminal")
+	}
+}
+
+// A runner that reports its own failure once its context ends (every Docker
+// runner does: the daemon call fails with "context canceled") still ends as
+// cancelled, not failed.
+func TestCancelOverridesARunnerReportedFailure(t *testing.T) {
+	m := New(Options{})
+	defer m.Shutdown(context.Background())
+
+	started := make(chan struct{})
+	job, _ := m.Run("test", "t", "", func(h *Handle) error {
+		close(started)
+		<-h.Ctx.Done()
+		h.Fail("image_pull_failed", h.Ctx.Err().Error(), nil)
+		return nil
+	})
+	<-started
+	if _, err := m.Cancel(job.ID, ""); err != nil {
+		t.Fatal(err)
+	}
+	final := waitFinished(t, m, job.ID)
+	if final.Status != StatusCancelled || final.Result["cancelled"] != true {
+		t.Fatalf("job = %+v", final)
+	}
+	if _, ok := final.Result["cancelled_by"]; ok {
+		t.Errorf("an anonymous cancel recorded cancelled_by: %v", final.Result)
+	}
+}
+
+func TestCancelAFinishedJob(t *testing.T) {
+	m := New(Options{})
+	defer m.Shutdown(context.Background())
+
+	job, _ := m.Run("test", "t", "", func(h *Handle) error {
+		h.Succeed(nil)
+		return nil
+	})
+	waitFinished(t, m, job.ID)
+	snap, err := m.Cancel(job.ID, "dev1")
+	if !errors.Is(err, ErrFinished) {
+		t.Fatalf("err = %v", err)
+	}
+	if snap.Status != StatusSucceeded {
+		t.Fatalf("snapshot status = %q", snap.Status)
+	}
+	if got, _ := m.Get(job.ID); got.Status != StatusSucceeded || got.CancelRequested {
+		t.Fatalf("a refused cancel changed the job: %+v", got)
+	}
+	if _, err := m.Cancel("nope", ""); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("unknown id: err = %v", err)
+	}
+}
+
+func TestWaitReturnsTheFinishedJob(t *testing.T) {
+	m := New(Options{})
+	defer m.Shutdown(context.Background())
+
+	release := make(chan struct{})
+	job, _ := m.Run("test", "t", "", func(h *Handle) error {
+		<-release
+		h.Succeed(nil)
+		return nil
+	})
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	if got, ok := m.Wait(ctx, job.ID); !ok || got.FinishedAt != nil {
+		t.Fatalf("wait on a running job = %+v, %v", got, ok)
+	}
+	close(release)
+	got, ok := m.Wait(context.Background(), job.ID)
+	if !ok || got.Status != StatusSucceeded {
+		t.Fatalf("wait = %+v, %v", got, ok)
+	}
+	if _, ok := m.Wait(context.Background(), "nope"); ok {
+		t.Fatal("wait on an unknown id succeeded")
+	}
+}
+
+func TestShutdownEndsJobsAsCancelled(t *testing.T) {
+	m := New(Options{})
+	started := make(chan struct{})
+	job, _ := m.Run("test", "t", "", func(h *Handle) error {
+		close(started)
+		<-h.Ctx.Done()
+		return h.Ctx.Err()
+	})
+	<-started
+	m.Shutdown(context.Background())
+	final, _ := m.Get(job.ID)
+	if final.Status != StatusCancelled || final.Result["reason"] != "agent_shutdown" {
+		t.Fatalf("job = %+v", final)
 	}
 }
 

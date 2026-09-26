@@ -224,6 +224,14 @@ event: done
 data: {"status":"succeeded","result":{"ref":"nginx:alpine","layers":6}, ...}
 ```
 
+An operator or admin can stop a job that has not finished. The job ends as
+`cancelled`, and a job that already finished answers `409`:
+
+```sh
+$ curl -sk -X POST $HOST/v1/jobs/caa0983e5064fd730c7f36c7/cancel -H "$AUTH"
+{"job_id":"caa0983e5064fd730c7f36c7","job":{"status":"cancelled","result":{"cancelled":true, ...}, ...}}
+```
+
 Making a phone read-only is a server-side role change, not a client toggle:
 
 ```sh

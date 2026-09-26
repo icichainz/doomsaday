@@ -12,7 +12,7 @@ Status: `agent_zero` implements this document. The app talks to it through `Http
 - **Format**: JSON in and out, UTF-8, timestamps in RFC 3339 UTC, sizes in bytes.
 - **Errors**: `{"error": {"code": "container_not_found", "message": "...", "details": {}}}` with a matching HTTP status (400, 401, 403, 404, 409, 422, 500, 502 when the Docker daemon is unreachable).
 - **Lists**: `?limit=` and `?cursor=`; the response carries `next_cursor` when there is more.
-- **Long operations** (image pull, stack redeploy, prune, agent update) return `202` with `{"job_id": "..."}`. Poll `GET /jobs/{id}` or follow `GET /jobs/{id}/events` (Server-Sent Events) for progress lines and the final result.
+- **Long operations** (image pull, stack redeploy, prune, agent update) return `202` with `{"job_id": "..."}`. Poll `GET /jobs/{id}` or follow `GET /jobs/{id}/events` (Server-Sent Events) for progress lines and the final result. An operator or admin can stop one with `POST /jobs/{id}/cancel`; it then ends as `cancelled`.
 - **Streams** (logs, live stats, Docker events) are Server-Sent Events. The interactive shell is the one WebSocket.
 - **Risky actions**: stop, remove, prune, stack down and unpair accept an `X-Confirmed` header whose value is `biometric` or `typed` (typed is for a desktop client that had the user type the target's name instead of taking a fingerprint). When the server setting "fingerprint before risky actions" is on, the agent rejects these calls without it (`428`).
 - **Audit**: every mutating call is written to the activity log with device, user, action, target and result.
@@ -146,6 +146,7 @@ Screen: Server settings.
 | GET | `/agent/update` | Current and latest version, release notes link. |
 | POST | `/agent/update` | Download, verify signature, restart. Job. The app should expect the connection to drop and retry `/health`. |
 | GET | `/jobs/{id}`, `/jobs/{id}/events` | Status and progress for every long operation above. |
+| POST | `/jobs/{id}/cancel` | Stop a job that has not finished. Operator. The job ends as `cancelled` with `result.cancelled: true`; `409` with the current `status` in `details` when it had already finished. |
 
 ## Open decisions
 
@@ -166,7 +167,7 @@ The app engineer listed what the screens needed and the draft did not say. The b
 | Extra statuses | `201` for creates and `/pair`, `204` for deletes, `413`, `415`, and `429` with `Retry-After` for rate limits. Error codes follow `<resource>_not_found`; the full list is in API_NOTES section 4. Unknown JSON fields are rejected with `400`. |
 | Display strings | The agent returns raw values and timestamps only (`state`, `started_at`, `cpu_percent`, `memory_bytes`, `created_at`, `status_at`, `token_expiry`). The app formats "Up 12 days", "pulled 3 days ago" and "Verified 2 h ago" itself. |
 | Container counts | `GET /system/stats` returns `running`, `restarting`, `paused`, `exited`, `created`, `total` as separate numbers. The app shows running + restarting as "running" on the Servers card and the Running chip, and names the restarting ones separately on the overview. |
-| Roles | Viewer: every `GET` except environment values. Operator: adds container start, stop, restart, pause and unpause, stack up, redeploy and restart, image pull, service scale, update and rollback, alert mute and resolve. Admin only: remove, exec, environment values, stack down, every prune, image, volume and network create and remove, devices, registries, settings, alert rules, agent update. |
+| Roles | Viewer: every `GET` except environment values. Operator: adds container start, stop, restart, pause and unpause, stack up, redeploy and restart, image pull, service scale, update and rollback, alert mute and resolve, job cancel. Admin only: remove, exec, environment values, stack down, every prune, image, volume and network create and remove, devices, registries, settings, alert rules, agent update. |
 | Pairing | First device to pair is `admin`, later ones are `operator`. The last admin cannot be demoted or revoked (`409`). The response adds `device_id` and `agent_version`. |
 | "Read-only on this phone" | Open decision 3 is closed: it is the `viewer` role, set with `PATCH /devices/{id}`. It is no longer a client-side switch. |
 | Risky actions | With the setting on (default on), `428 confirmation_required` without `X-Confirmed: biometric` or `X-Confirmed: typed` for: container stop and remove, image remove and prune, volume remove and prune, network remove and prune, stack down, device revoke. Restart and pause are not covered. The audit record of a risky call records which method confirmed it. |
@@ -184,6 +185,7 @@ The app engineer listed what the screens needed and the draft did not say. The b
 | Paired servers | The Servers screen is phone-local state (name, URL, pinned fingerprint, device key per server). No endpoint lists "my servers". |
 | Agent update | `GET /agent/update` reports `latest_version: "unknown"`. `POST` returns a job that fails with `not_configured`. Nothing is downloaded or executed until a signed release channel exists. |
 | Added endpoint | `GET /jobs`, a paginated list of retained jobs (newest 200, one hour), for an app that reconnects and lost a job id. |
+| Job cancel | `POST /jobs/{id}/cancel`, operator or admin, audited. It cancels the job's context, so a pull, compose command or prune stops, and the job ends in the terminal status `cancelled` with `result.cancelled: true`, on `GET /jobs/{id}` and as the stream's final `done` event. `200` with the cancelled job, or `202` with `cancel_requested: true` when the work takes longer than a few seconds to stop; `409 conflict` with `{"status": "<current>"}` when the job had already finished; `404 job_not_found`. Details in API_NOTES section 38. |
 | `GET /me` | Built. Any authenticated role gets `device_id`, `device_name`, `role`, `cert_fingerprint`, `paired_devices` and `agent_version`. The role is read fresh on every call, so one an admin changed later is noticed; the fingerprint is the same string `POST /pair` returns, and is empty under `--insecure-http`. It is a read and is not audited. |
 | Volume and network summaries | Built. `summary` sits beside `items` as it does on `/images`, computed over the whole host after filtering and before paging: `{count, total_bytes, unmounted}` on `/volumes`, where `unmounted` means an empty `mounted_by`, and `{count, unused}` on `/networks`, where `unused` means `attached_containers == 0` and default networks are counted too. Both endpoints also accept `?q=`. |
 | Container times | Rows carry `created_at`, `started_at` and, for a container that is not running, `finished_at`. "Exited · 12 min ago" is formatted from `finished_at`. |

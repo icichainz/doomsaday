@@ -49,6 +49,9 @@ type Server struct {
 	StatsInterval time.Duration
 	// KeepAlive is how often an idle SSE stream emits a comment frame.
 	KeepAlive time.Duration
+	// CancelWait bounds how long POST /v1/jobs/{id}/cancel waits for the
+	// job to wind down before it answers 202 instead of 200.
+	CancelWait time.Duration
 }
 
 // NewServer builds a Server with sane defaults.
@@ -66,6 +69,7 @@ func NewServer(d Deps) *Server {
 		MaxBodyBytes:  1 << 20,
 		StatsInterval: 3 * time.Second,
 		KeepAlive:     20 * time.Second,
+		CancelWait:    5 * time.Second,
 	}
 }
 
@@ -204,4 +208,5 @@ func (s *Server) routes(mux *http.ServeMux) {
 	mux.Handle("GET /v1/jobs", s.viewer(s.handleJobList))
 	mux.Handle("GET /v1/jobs/{id}", s.viewer(s.handleJobGet))
 	mux.Handle("GET /v1/jobs/{id}/events", s.viewer(s.handleJobEvents))
+	mux.Handle("POST /v1/jobs/{id}/cancel", s.operator(s.handleJobCancel))
 }

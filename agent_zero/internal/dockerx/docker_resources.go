@@ -41,7 +41,8 @@ func (d *Docker) ImageList(ctx context.Context) ([]Image, error) {
 	return out, nil
 }
 
-// ImagePull pulls an image, reporting layer progress.
+// ImagePull pulls an image, reporting layer progress. Cancelling ctx closes
+// the progress stream, which makes the daemon abandon the pull.
 func (d *Docker) ImagePull(ctx context.Context, ref string, auth *RegistryAuth, onProgress func(PullProgress)) error {
 	rc, err := d.cli.ImagePull(ctx, ref, image.PullOptions{RegistryAuth: encodeAuth(auth)})
 	if err != nil {
@@ -61,10 +62,20 @@ func (d *Docker) ImagePull(ctx context.Context, ref string, auth *RegistryAuth, 
 			Error string `json:"error"`
 		}
 		if err := dec.Decode(&msg); err != nil {
+			// A cancelled context aborts the body read with a transport
+			// error; report the cancel itself, not what it looked like.
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return ctxErr
+			}
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
 			return wrap(err)
+		}
+		// The daemon can keep a stream open with nothing to read for a
+		// while; do not act on a message that arrived after a cancel.
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return ctxErr
 		}
 		if msg.Error != "" {
 			return errors.New(msg.Error)

@@ -3,6 +3,7 @@ package jobs
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"sync"
 	"time"
@@ -17,8 +18,26 @@ const (
 	StatusRunning   Status = "running"
 	StatusSucceeded Status = "succeeded"
 	StatusFailed    Status = "failed"
-	StatusCanceled  Status = "canceled"
+	// StatusCancelled is the end of a job that was stopped before it
+	// finished: by POST /v1/jobs/{id}/cancel, or by the agent shutting down.
+	StatusCancelled Status = "cancelled"
 )
+
+// CodeCancelled is the error code a cancelled job carries.
+const CodeCancelled = "job_cancelled"
+
+// Errors returned by Manager.Cancel.
+var (
+	// ErrNotFound means no retained job has that id.
+	ErrNotFound = errors.New("jobs: no such job")
+	// ErrFinished means the job already reached a terminal status.
+	ErrFinished = errors.New("jobs: the job has already finished")
+)
+
+// Finished reports whether st is a terminal status.
+func (st Status) Finished() bool {
+	return st == StatusSucceeded || st == StatusFailed || st == StatusCancelled
+}
 
 // Line is one progress line.
 type Line struct {
@@ -48,6 +67,9 @@ type Job struct {
 	Result     map[string]any `json:"result,omitempty"`
 	Error      *Error         `json:"error,omitempty"`
 	DeviceID   string         `json:"device_id,omitempty"`
+	// CancelRequested is true once a cancel was asked for and the job has
+	// not wound down yet, and stays true on the finished job.
+	CancelRequested bool `json:"cancel_requested,omitempty"`
 }
 
 // clone returns a deep enough copy to hand to a caller without races.
@@ -77,7 +99,9 @@ type Update struct {
 type Handle struct {
 	m  *Manager
 	id string
-	// Ctx is canceled when the job is canceled or the manager shuts down.
+	// Ctx is done when the job is cancelled or the manager shuts down. Every
+	// runner must pass it (or a context derived from it) to whatever blocks,
+	// so a cancel actually stops the work.
 	Ctx context.Context
 }
 
@@ -121,7 +145,11 @@ type Manager struct {
 	mu     sync.RWMutex
 	jobs   map[string]*Job
 	cancel map[string]context.CancelFunc
-	subs   map[string]map[chan Update]struct{}
+	// done is closed when a job reaches its terminal status.
+	done map[string]chan struct{}
+	// cancelledBy holds the device that asked for a cancel, "" for none.
+	cancelledBy map[string]string
+	subs        map[string]map[chan Update]struct{}
 
 	wg      sync.WaitGroup
 	baseCtx context.Context
@@ -145,13 +173,15 @@ func New(opts Options) *Manager {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Manager{
-		opts:    opts,
-		jobs:    map[string]*Job{},
-		cancel:  map[string]context.CancelFunc{},
-		subs:    map[string]map[chan Update]struct{}{},
-		baseCtx: ctx,
-		stop:    cancel,
-		now:     time.Now,
+		opts:        opts,
+		jobs:        map[string]*Job{},
+		cancel:      map[string]context.CancelFunc{},
+		done:        map[string]chan struct{}{},
+		cancelledBy: map[string]string{},
+		subs:        map[string]map[chan Update]struct{}{},
+		baseCtx:     ctx,
+		stop:        cancel,
+		now:         time.Now,
 	}
 }
 
@@ -188,6 +218,7 @@ func (m *Manager) Run(typ, target, deviceID string, fn func(*Handle) error) (Job
 	m.mu.Lock()
 	m.jobs[id] = j
 	m.cancel[id] = cancel
+	m.done[id] = make(chan struct{})
 	m.gcLocked()
 	snapshot := j.clone()
 	m.mu.Unlock()
@@ -216,8 +247,14 @@ func (m *Manager) Run(typ, target, deviceID string, fn func(*Handle) error) (Job
 			return
 		}
 		switch {
-		case err != nil && ctx.Err() != nil:
-			m.finish(id, StatusCanceled, nil, &Error{Code: "job_canceled", Message: "job was canceled"})
+		case ctx.Err() != nil:
+			// The runner returned without reporting after its context ended:
+			// finish rewrites this as cancelled.
+			msg := "the job stopped without reporting a result"
+			if err != nil {
+				msg = err.Error()
+			}
+			m.finish(id, StatusFailed, nil, &Error{Code: "job_failed", Message: msg})
 		case err != nil:
 			m.finish(id, StatusFailed, nil, &Error{Code: "job_failed", Message: err.Error()})
 		default:
@@ -247,29 +284,104 @@ func (m *Manager) appendLine(id, format string, percent float64, args ...any) {
 func (m *Manager) finish(id string, st Status, result map[string]any, jerr *Error) {
 	m.mu.Lock()
 	j, ok := m.jobs[id]
+	changed := false
 	if ok && j.FinishedAt == nil {
+		// A job whose context was cancelled ends as cancelled, whatever the
+		// runner reported: a pull that failed with "context canceled" was
+		// stopped, it did not fail. Only a runner that finished its work
+		// before it noticed the cancel keeps its success.
+		if st != StatusSucceeded && m.cancelledLocked(id) {
+			st, result, jerr = StatusCancelled, m.cancelResultLocked(id), &Error{
+				Code:    CodeCancelled,
+				Message: "the job was cancelled before it finished",
+				Details: map[string]any{},
+			}
+		}
 		t := m.now().UTC()
 		j.Status = st
 		j.FinishedAt = &t
 		j.Result = result
 		j.Error = jerr
+		if done, ok := m.done[id]; ok {
+			close(done)
+		}
+		changed = true
 	}
 	m.mu.Unlock()
-	if ok {
+	if changed {
 		m.publish(id, nil)
 	}
 }
 
-// Cancel stops a running job.
-func (m *Manager) Cancel(id string) bool {
+// cancelledLocked reports whether the job was asked to stop, by a caller or by
+// Shutdown. m.mu must be held.
+func (m *Manager) cancelledLocked(id string) bool {
+	if _, asked := m.cancelledBy[id]; asked {
+		return true
+	}
+	return m.baseCtx.Err() != nil
+}
+
+// cancelResultLocked is the result document of a cancelled job.
+func (m *Manager) cancelResultLocked(id string) map[string]any {
+	out := map[string]any{"cancelled": true}
+	if by, asked := m.cancelledBy[id]; asked {
+		if by != "" {
+			out["cancelled_by"] = by
+		}
+	} else {
+		out["reason"] = "agent_shutdown"
+	}
+	return out
+}
+
+// Cancel asks a queued or running job to stop: its context is cancelled, and
+// when the runner returns the job ends as StatusCancelled with
+// result.cancelled set. by is the device that asked, recorded in the result.
+// It returns the job as it is right after the request, ErrNotFound for an
+// unknown id, and ErrFinished (with the finished job) when there is nothing
+// left to cancel. Asking twice is harmless.
+func (m *Manager) Cancel(id, by string) (Job, error) {
+	m.mu.Lock()
+	j, ok := m.jobs[id]
+	if !ok {
+		m.mu.Unlock()
+		return Job{}, ErrNotFound
+	}
+	if j.FinishedAt != nil {
+		snap := j.clone()
+		m.mu.Unlock()
+		return snap, ErrFinished
+	}
+	if _, asked := m.cancelledBy[id]; !asked {
+		m.cancelledBy[id] = by
+	}
+	j.CancelRequested = true
+	cancel := m.cancel[id]
+	snap := j.clone()
+	m.mu.Unlock()
+
+	if cancel != nil {
+		cancel()
+	}
+	m.publish(id, nil)
+	return snap, nil
+}
+
+// Wait blocks until the job finishes or ctx ends, and returns the job as it is
+// then. The bool is false for an unknown id.
+func (m *Manager) Wait(ctx context.Context, id string) (Job, bool) {
 	m.mu.RLock()
-	cancel, ok := m.cancel[id]
+	done, ok := m.done[id]
 	m.mu.RUnlock()
 	if !ok {
-		return false
+		return Job{}, false
 	}
-	cancel()
-	return true
+	select {
+	case <-done:
+	case <-ctx.Done():
+	}
+	return m.Get(id)
 }
 
 // Get returns a snapshot of one job.
@@ -359,8 +471,7 @@ func (m *Manager) gcLocked() {
 			continue
 		}
 		if j.FinishedAt.Before(cutoff) {
-			delete(m.jobs, id)
-			delete(m.cancel, id)
+			m.forgetLocked(id)
 			continue
 		}
 		done = append(done, fin{id, *j.FinishedAt})
@@ -370,7 +481,14 @@ func (m *Manager) gcLocked() {
 	}
 	sort.Slice(done, func(i, j int) bool { return done[i].at.Before(done[j].at) })
 	for _, f := range done[:len(done)-m.opts.Retain] {
-		delete(m.jobs, f.id)
-		delete(m.cancel, f.id)
+		m.forgetLocked(f.id)
 	}
+}
+
+// forgetLocked drops every trace of a finished job. m.mu must be held.
+func (m *Manager) forgetLocked(id string) {
+	delete(m.jobs, id)
+	delete(m.cancel, id)
+	delete(m.done, id)
+	delete(m.cancelledBy, id)
 }
