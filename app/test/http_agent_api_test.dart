@@ -635,6 +635,90 @@ void main() {
       expect(updates.last.status, JobStatus.succeeded);
     });
 
+    test('cancels a job and reads its cancelled end', () async {
+      Map<String, Object?> job(String status, {bool cancelled = false}) =>
+          <String, Object?>{
+            'id': 'job-3',
+            'type': 'image_pull',
+            'target': 'nginx:1.27',
+            'status': status,
+            'created_at': '2026-01-01T00:00:00Z',
+            'started_at': '2026-01-01T00:00:01Z',
+            if (cancelled) 'finished_at': '2026-01-01T00:00:09Z',
+            'progress': <Object?>[
+              <String, Object?>{
+                'ts': '2026-01-01T00:00:02Z',
+                'text': 'pulling nginx:1.27',
+                'percent': -1,
+              },
+            ],
+            if (cancelled) ...<String, Object?>{
+              'cancel_requested': true,
+              'result': <String, Object?>{
+                'cancelled': true,
+                'cancelled_by': 'dev-1',
+              },
+              'error': <String, Object?>{
+                'code': 'job_cancelled',
+                'message': 'the job was cancelled before it finished',
+                'details': <String, Object?>{},
+              },
+            },
+          };
+
+      agent.json('POST /v1/jobs/job-3/cancel', <String, Object?>{
+        'job_id': 'job-3',
+        'job': job('cancelled', cancelled: true),
+      });
+      agent.json('GET /v1/jobs/job-3', job('cancelled', cancelled: true));
+      agent.on('GET /v1/jobs/job-3/events', (HttpRequest request) async {
+        await sseHead(request.response);
+        sseFrame(request.response, 'status', job('running'));
+        sseFrame(request.response, 'done', job('cancelled', cancelled: true));
+        await request.response.flush();
+      });
+
+      expect(api.canCancelJobs, isTrue);
+      await api.cancelJob('job-3');
+      expect(agent.requests, contains('POST /v1/jobs/job-3/cancel'));
+
+      final Job polled = await api.job('job-3');
+      expect(polled.status, JobStatus.canceled);
+      expect(polled.status.isFinished, isTrue);
+      expect(polled.errorCode, 'job_cancelled');
+      expect(polled.progress, 1);
+
+      final List<Job> updates = await api.jobEvents('job-3').toList();
+      expect(updates.first.status, JobStatus.running);
+      expect(updates.last.status, JobStatus.canceled);
+    });
+
+    test('cancelling a finished job is a conflict', () async {
+      agent.json('POST /v1/jobs/job-4/cancel', <String, Object?>{
+        'error': <String, Object?>{
+          'code': 'conflict',
+          'message':
+              'the job has already finished, so there is nothing to '
+              'cancel',
+          'details': <String, Object?>{'status': 'succeeded'},
+        },
+      }, status: 409);
+
+      await expectLater(
+        api.cancelJob('job-4'),
+        throwsA(
+          isA<AgentException>()
+              .having((AgentException e) => e.code, 'code', 'conflict')
+              .having((AgentException e) => e.status, 'status', 409)
+              .having(
+                (AgentException e) => e.details?['status'],
+                'details.status',
+                'succeeded',
+              ),
+        ),
+      );
+    });
+
     test(
       'a system stats stream yields the first sample from the plain GET',
       () async {

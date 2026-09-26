@@ -85,7 +85,7 @@ and redeploy, `viewer` is read-only." That leaves most endpoints unassigned.
   `GET /v1/me` (§33), which every authenticated role may call.
 - **operator**: everything a viewer can do, plus container start, stop,
   restart, pause, unpause; stack up, redeploy, restart; image pull; service
-  scale, update, rollback; alert mute and resolve.
+  scale, update, rollback; alert mute and resolve; job cancel (§38).
 - **admin**: everything, and *only* admin for: container remove, container
   exec, environment values, stack down, image remove, image prune, volume
   create, remove and prune, network create, remove and prune, every
@@ -546,3 +546,41 @@ the person at the keyboard. The phone still sends `biometric`.
 
 Which endpoints the rule covers (§26), the setting's name and its default
 (§25) are unchanged.
+
+## 38. `POST /v1/jobs/{id}/cancel`
+
+**Contract**: the job sheet has a "Cancel" button, and the contract gave jobs
+no way to stop one.
+
+**Here**: an operator or admin (a viewer gets `403`) can stop any job that has
+not finished, whoever started it. The call is audited like every other
+mutating call, with the job id as `target` and `job_type`, `job_target` and
+`job_status` in `details`.
+
+- It cancels the job's context. Every runner passes that context to the work
+  it does: the Docker client aborts a pull's progress stream and a prune's or
+  service update's request, and a compose command gets `SIGTERM` sent to its
+  whole process group (the compose plugin runs as a child of the docker CLI
+  and would otherwise keep going), then `SIGKILL` after 10 seconds.
+- The job ends in the terminal status **`cancelled`**, with
+  `result: {"cancelled": true, "cancelled_by": "<device id>"}` and
+  `error: {"code": "job_cancelled", ...}`, whatever error the interrupted work
+  reported on its way out. It is what `GET /v1/jobs/{id}` returns and the
+  final `done` event of `GET /v1/jobs/{id}/events`. A job carries
+  `cancel_requested: true` from the moment it was asked to stop.
+- The answer waits up to 5 seconds for the work to wind down: `200` with
+  `{"job_id", "job"}` holding the cancelled job, or `202` with the same shape
+  and the job still `running` with `cancel_requested: true`; the stream then
+  brings the end.
+- A job that had already finished answers `409 conflict` with
+  `{"status": "<current>"}` in `details` (`succeeded`, `failed` or
+  `cancelled`) and is left as it was. An unknown id is `404 job_not_found`.
+  Cancelling twice before the job ends is harmless.
+- Work that completed before it noticed the cancel keeps its `succeeded`:
+  the agent does not report as stopped something that happened.
+- Cancelling is not undoing. A prune the daemon had started may already have
+  removed some objects, and a `compose up` may have started some containers.
+- Jobs cut short by the agent shutting down end the same way, with
+  `result.reason: "agent_shutdown"` instead of `cancelled_by`.
+- The status is spelled `cancelled`. The earlier `canceled`, which only a
+  shutdown could produce and no endpoint could, is gone.

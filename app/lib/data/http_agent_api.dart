@@ -447,6 +447,25 @@ class HttpAgentApi implements AgentApi {
 
   // ------------------------------------------------------------------ jobs
 
+  /// A job as the agent sends it. The agent spells the stopped state
+  /// `cancelled` and sets `result.cancelled`; [JobStatus] calls it `canceled`,
+  /// and an unknown status would otherwise read as still running.
+  static Job _jobFromJson(Map<String, Object?> json) {
+    final Object? status = json['status'];
+    final Object? result = json['result'];
+    final bool known = JobStatus.values.any((JobStatus s) => s.name == status);
+    final bool cancelled =
+        status == 'cancelled' ||
+        (!known &&
+            result is Map<String, Object?> &&
+            result['cancelled'] == true);
+    if (!cancelled) return Job.fromJson(json);
+    return Job.fromJson(<String, Object?>{
+      ...json,
+      'status': JobStatus.canceled.name,
+    });
+  }
+
   /// `202 {"job_id": ..., "job": {...}}`.
   Future<Job> _job(
     String path, {
@@ -458,7 +477,7 @@ class HttpAgentApi implements AgentApi {
       await _send('POST', path, body: body, confirmed: confirmed, query: query),
     );
     final Object? inline = answer['job'];
-    if (inline is Map<String, Object?>) return Job.fromJson(inline);
+    if (inline is Map<String, Object?>) return _jobFromJson(inline);
     final String id = answer['job_id'] as String? ?? '';
     if (id.isEmpty) {
       throw const AgentException(
@@ -1064,17 +1083,18 @@ class HttpAgentApi implements AgentApi {
 
   @override
   Future<Job> job(String id) async =>
-      Job.fromJson(_object(await _send('GET', '/jobs/${_seg(id)}')));
+      _jobFromJson(_object(await _send('GET', '/jobs/${_seg(id)}')));
 
   @override
-  bool get canCancelJobs => false;
+  bool get canCancelJobs => true;
 
+  /// `200` with the cancelled job, or `202` while the work is still winding
+  /// down; either way the end arrives on [jobEvents]. `409 conflict` (already
+  /// finished) and `404 job_not_found` surface as [AgentException].
   @override
-  Future<void> cancelJob(String id) async => throw const AgentException(
-    'not_supported',
-    'This agent cannot cancel a running job.',
-    status: 405,
-  );
+  Future<void> cancelJob(String id) async {
+    await _send('POST', '/jobs/${_seg(id)}/cancel');
+  }
 
   @override
   Stream<Job> jobEvents(String id) async* {
@@ -1098,7 +1118,7 @@ class HttpAgentApi implements AgentApi {
             yield current;
           case 'status':
           case 'done':
-            current = Job.fromJson(data);
+            current = _jobFromJson(data);
             yield current;
             if (event.event == 'done') return;
           default:

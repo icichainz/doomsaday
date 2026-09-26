@@ -1,6 +1,8 @@
 package httpapi
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -111,4 +113,51 @@ func (s *Server) handleJobEvents(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+}
+
+// handleJobCancel stops a queued or running job. It cancels the job's context,
+// waits up to CancelWait for the runner to wind down, and answers 200 with the
+// cancelled job, or 202 with the job still running and cancel_requested set
+// when the work takes longer to stop; the final state then arrives on
+// GET /v1/jobs/{id} and as the "done" event of the job's stream.
+func (s *Server) handleJobCancel(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if !validID(id) {
+		validationError(w, "id", "the job id is not valid")
+		return
+	}
+	setAuditTarget(r, id)
+	dev, _ := deviceFrom(r)
+
+	job, err := s.Jobs.Cancel(id, dev.ID)
+	switch {
+	case errors.Is(err, jobs.ErrNotFound):
+		writeError(w, http.StatusNotFound, notFoundCode("job"), "job not found", nil)
+		return
+	case errors.Is(err, jobs.ErrFinished):
+		setAuditDetail(r, "job_type", job.Type)
+		writeError(w, http.StatusConflict, codeConflict,
+			"the job has already finished, so there is nothing to cancel",
+			map[string]any{"status": string(job.Status)})
+		return
+	case err != nil:
+		s.fail(w, "job", err)
+		return
+	}
+	setAuditDetail(r, "job_type", job.Type)
+	if job.Target != "" {
+		setAuditDetail(r, "job_target", job.Target)
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), s.CancelWait)
+	defer cancel()
+	if final, ok := s.Jobs.Wait(ctx, id); ok {
+		job = final
+	}
+	status := http.StatusOK
+	if job.FinishedAt == nil {
+		status = http.StatusAccepted
+	}
+	setAuditDetail(r, "job_status", string(job.Status))
+	writeJSON(w, status, map[string]any{"job_id": job.ID, "job": job})
 }

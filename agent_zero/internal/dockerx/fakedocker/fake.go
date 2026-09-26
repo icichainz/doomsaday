@@ -44,6 +44,15 @@ type Fake struct {
 	// PullProgress is replayed by ImagePull.
 	PullProgress []dockerx.PullProgress
 
+	// Hold makes the named long-running methods (ImagePull, ImagePrune,
+	// VolumePrune, NetworkPrune, ServiceUpdate, ServiceRollback) block after
+	// they are entered until the channel is closed or their context ends, the
+	// way a real pull or prune does. A held call whose context ends returns
+	// the context's error. Set it before the call starts.
+	Hold map[string]chan struct{}
+	// Entered, when set, receives a method's name as it starts to hold.
+	Entered chan string
+
 	calls    []Call
 	lastExec *ExecSession
 }
@@ -157,6 +166,26 @@ func (f *Fake) record(method string, args ...any) error {
 	err := f.Errs[method]
 	f.mu.Unlock()
 	return err
+}
+
+// hold blocks a long-running method as Hold asks.
+func (f *Fake) hold(ctx context.Context, method string) error {
+	f.mu.Lock()
+	release, ok := f.Hold[method]
+	entered := f.Entered
+	f.mu.Unlock()
+	if !ok {
+		return nil
+	}
+	if entered != nil {
+		entered <- method
+	}
+	select {
+	case <-release:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
 // Ping answers unless an error is configured.
@@ -460,9 +489,12 @@ func (f *Fake) ImageList(context.Context) ([]dockerx.Image, error) {
 }
 
 // ImagePull replays PullProgress.
-func (f *Fake) ImagePull(_ context.Context, ref string, auth *dockerx.RegistryAuth, onProgress func(dockerx.PullProgress)) error {
+func (f *Fake) ImagePull(ctx context.Context, ref string, auth *dockerx.RegistryAuth, onProgress func(dockerx.PullProgress)) error {
 	hasAuth := auth != nil
 	if err := f.record("ImagePull", ref, hasAuth); err != nil {
+		return err
+	}
+	if err := f.hold(ctx, "ImagePull"); err != nil {
 		return err
 	}
 	for _, p := range f.PullProgress {
@@ -491,8 +523,11 @@ func (f *Fake) ImageRemove(_ context.Context, id string, force bool) error {
 }
 
 // ImagePrune reports a fixed reclaim.
-func (f *Fake) ImagePrune(_ context.Context, danglingOnly bool) (dockerx.PruneResult, error) {
+func (f *Fake) ImagePrune(ctx context.Context, danglingOnly bool) (dockerx.PruneResult, error) {
 	if err := f.record("ImagePrune", danglingOnly); err != nil {
+		return dockerx.PruneResult{}, err
+	}
+	if err := f.hold(ctx, "ImagePrune"); err != nil {
 		return dockerx.PruneResult{}, err
 	}
 	return dockerx.PruneResult{Deleted: []string{"sha256:img3"}, SpaceReclaimed: 20 << 20}, nil
@@ -541,8 +576,11 @@ func (f *Fake) VolumeRemove(_ context.Context, name string, force bool) error {
 }
 
 // VolumePrune reports a fixed reclaim.
-func (f *Fake) VolumePrune(context.Context) (dockerx.PruneResult, error) {
+func (f *Fake) VolumePrune(ctx context.Context) (dockerx.PruneResult, error) {
 	if err := f.record("VolumePrune"); err != nil {
+		return dockerx.PruneResult{}, err
+	}
+	if err := f.hold(ctx, "VolumePrune"); err != nil {
 		return dockerx.PruneResult{}, err
 	}
 	return dockerx.PruneResult{Deleted: []string{}, SpaceReclaimed: 0}, nil
@@ -594,8 +632,11 @@ func (f *Fake) NetworkRemove(_ context.Context, id string) error {
 }
 
 // NetworkPrune reports nothing removed.
-func (f *Fake) NetworkPrune(context.Context) (dockerx.PruneResult, error) {
+func (f *Fake) NetworkPrune(ctx context.Context) (dockerx.PruneResult, error) {
 	if err := f.record("NetworkPrune"); err != nil {
+		return dockerx.PruneResult{}, err
+	}
+	if err := f.hold(ctx, "NetworkPrune"); err != nil {
 		return dockerx.PruneResult{}, err
 	}
 	return dockerx.PruneResult{Deleted: []string{}}, nil
@@ -643,8 +684,11 @@ func (f *Fake) ServiceScale(_ context.Context, id string, replicas uint64) error
 }
 
 // ServiceUpdate records the call.
-func (f *Fake) ServiceUpdate(_ context.Context, id string, opts dockerx.ServiceUpdateOptions) error {
+func (f *Fake) ServiceUpdate(ctx context.Context, id string, opts dockerx.ServiceUpdateOptions) error {
 	if err := f.record("ServiceUpdate", id, opts); err != nil {
+		return err
+	}
+	if err := f.hold(ctx, "ServiceUpdate"); err != nil {
 		return err
 	}
 	if !f.Swarm.Manager {
@@ -654,8 +698,11 @@ func (f *Fake) ServiceUpdate(_ context.Context, id string, opts dockerx.ServiceU
 }
 
 // ServiceRollback records the call.
-func (f *Fake) ServiceRollback(_ context.Context, id string) error {
+func (f *Fake) ServiceRollback(ctx context.Context, id string) error {
 	if err := f.record("ServiceRollback", id); err != nil {
+		return err
+	}
+	if err := f.hold(ctx, "ServiceRollback"); err != nil {
 		return err
 	}
 	if !f.Swarm.Manager {

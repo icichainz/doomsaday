@@ -7,11 +7,10 @@
 package compose
 
 import (
-	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -19,6 +18,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"agent_zero/internal/dockerx"
 )
@@ -236,6 +236,9 @@ func normalizeProjectName(dir string) string {
 type Runner struct {
 	// Bin is the docker CLI binary, "docker" by default.
 	Bin string
+	// StopGrace is how long a cancelled command gets between SIGTERM and
+	// SIGKILL; defaultStopGrace when zero.
+	StopGrace time.Duration
 }
 
 // Action is one of the stack operations the API exposes.
@@ -292,14 +295,22 @@ func (r *Runner) Run(ctx context.Context, p Project, a Action, onLine func(strin
 		if onLine != nil {
 			onLine("$ " + bin + " " + strings.Join(argv, " "))
 		}
-		if err := runCommand(ctx, bin, argv, p.WorkingDir, onLine); err != nil {
+		grace := r.StopGrace
+		if grace <= 0 {
+			grace = defaultStopGrace
+		}
+		if err := runCommand(ctx, bin, argv, p.WorkingDir, grace, onLine); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func runCommand(ctx context.Context, bin string, argv []string, dir string, onLine func(string)) error {
+// defaultStopGrace is how long a cancelled compose command gets to exit
+// after SIGTERM before its process group is killed.
+const defaultStopGrace = 10 * time.Second
+
+func runCommand(ctx context.Context, bin string, argv []string, dir string, grace time.Duration, onLine func(string)) error {
 	cmd := exec.CommandContext(ctx, bin, argv...)
 	if dir != "" {
 		cmd.Dir = dir
@@ -307,36 +318,87 @@ func runCommand(ctx context.Context, bin string, argv []string, dir string, onLi
 	// A deliberately minimal environment: no inherited secrets.
 	cmd.Env = append(os.Environ(), "COMPOSE_ANSI=never", "DOCKER_CLI_HINTS=false")
 
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return err
-	}
+	// `docker compose` is the docker CLI running the compose plugin as a
+	// child process. Killing only the parent on cancel leaves the plugin
+	// running and holding the output pipes, so the command would never be
+	// seen to end. The command therefore runs in its own process group: a
+	// cancel sends SIGTERM to the whole group and SIGKILL after grace, and
+	// WaitDelay stops Wait from waiting on the pipes for longer than that.
+	stopGroup := ownProcessGroup(cmd, grace)
+	defer stopGroup()
+	cmd.WaitDelay = 2 * grace
+
+	out := &lineWriter{onLine: onLine}
+	errOut := &lineWriter{onLine: onLine, shared: &out.mu}
+	cmd.Stdout = out
+	cmd.Stderr = errOut
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("compose: start %s: %w", bin, err)
 	}
-
-	var wg sync.WaitGroup
-	scan := func(rc io.Reader) {
-		defer wg.Done()
-		sc := bufio.NewScanner(rc)
-		sc.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-		for sc.Scan() {
-			if onLine != nil {
-				onLine(sc.Text())
-			}
-		}
+	err := cmd.Wait()
+	out.flush()
+	errOut.flush()
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return fmt.Errorf("compose: %s stopped: %w", bin, ctxErr)
 	}
-	wg.Add(2)
-	go scan(stdout)
-	go scan(stderr)
-	wg.Wait()
-
-	if err := cmd.Wait(); err != nil {
+	if err != nil {
 		return fmt.Errorf("compose: %s %s: %w", bin, strings.Join(argv, " "), err)
 	}
 	return nil
 }
+
+// lineWriter turns a command's output into onLine calls, one per line. Two
+// writers may share a mutex so stdout and stderr lines never interleave
+// mid-call.
+type lineWriter struct {
+	onLine func(string)
+	mu     sync.Mutex
+	shared *sync.Mutex
+	buf    []byte
+}
+
+func (w *lineWriter) lock() func() {
+	m := &w.mu
+	if w.shared != nil {
+		m = w.shared
+	}
+	m.Lock()
+	return m.Unlock
+}
+
+func (w *lineWriter) Write(p []byte) (int, error) {
+	defer w.lock()()
+	w.buf = append(w.buf, p...)
+	for {
+		i := bytes.IndexByte(w.buf, '\n')
+		if i < 0 {
+			break
+		}
+		w.emit(w.buf[:i])
+		w.buf = w.buf[i+1:]
+	}
+	// A line longer than this is not a progress line; pass it on in pieces
+	// rather than buffering without bound.
+	if len(w.buf) > maxLine {
+		w.emit(w.buf)
+		w.buf = nil
+	}
+	return len(p), nil
+}
+
+func (w *lineWriter) flush() {
+	defer w.lock()()
+	if len(w.buf) > 0 {
+		w.emit(w.buf)
+		w.buf = nil
+	}
+}
+
+func (w *lineWriter) emit(line []byte) {
+	if w.onLine != nil {
+		w.onLine(strings.TrimRight(string(line), "\r"))
+	}
+}
+
+const maxLine = 1024 * 1024

@@ -252,12 +252,14 @@ abstract class AgentApi {
   /// `GET /jobs/{id}/events`, falling back to polling `GET /jobs/{id}`.
   Stream<Job> jobEvents(String id);
 
-  /// Whether [cancelJob] does anything. The agent's job manager can cancel,
-  /// but API revision 1.1 has no route for it yet, so the HTTP client says
-  /// no and the progress sheet leaves its "Cancel" button out.
+  /// Whether [cancelJob] does anything. When false the progress sheet leaves
+  /// its "Cancel" button out.
   bool get canCancelJobs;
 
-  /// Stops a running job; it then finishes as `canceled`.
+  /// `POST /jobs/{id}/cancel` — operator. Stops a job that has not finished;
+  /// it then ends as [JobStatus.canceled] (the agent spells it `cancelled`,
+  /// with `result.cancelled: true`) and [jobEvents] brings that end. A job
+  /// that already finished is an [AgentException] with code `conflict`.
   Future<void> cancelJob(String id);
 
   /// Releases sockets held by this client. Called when a server is unpaired.
